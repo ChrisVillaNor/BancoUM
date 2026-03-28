@@ -8,14 +8,19 @@ export default function CuentasManager() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [errorText, setErrorText] = useState('');
-  const [formData, setFormData] = useState({ numero_cuenta: '', saldo: '0', cupo_total: '0' });
+  const [formData, setFormData] = useState({ numero_cuenta: '', saldo: '0', cupo_total: '0', usuario_id: '' });
+  const [clientesList, setClientesList] = useState([]);
 
   const fetchCuentas = async () => {
     setLoading(true);
     try {
-      const res = await fetch(API_CUENTAS);
+      const res = await fetch(API_URL);
       const data = await res.json();
       setCuentas(data);
+
+      const resCli = await fetch('/api/clientes');
+      const dataCli = await resCli.json();
+      setClientesList(dataCli);
     } catch {
       setErrorText('Error al cargar cuentas');
     } finally {
@@ -30,7 +35,7 @@ export default function CuentasManager() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(API_CUENTAS, {
+      const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -39,7 +44,7 @@ export default function CuentasManager() {
       if (!res.ok) throw new Error(data.error);
       setCuentas([data, ...cuentas]);
       setShowForm(false);
-      setFormData({ numero_cuenta: '', saldo: '0', cupo_total: '0' });
+      setFormData({ numero_cuenta: '', saldo: '0', cupo_total: '0', usuario_id: '' });
     } catch (err) {
       setErrorText(err.message);
     }
@@ -69,6 +74,15 @@ export default function CuentasManager() {
 
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+              <div className="form-group">
+                 <label>Cliente Propietario</label>
+                 <select name="usuario_id" value={formData.usuario_id} onChange={handleChange} required>
+                    <option value="">Seleccione al Cliente</option>
+                    {clientesList.map(cli => (
+                       <option key={cli.id} value={cli.id}>{cli.nombre} {cli.apellido} (Cédula: {cli.numero_documento})</option>
+                    ))}
+                 </select>
+              </div>
               <div className="form-group"><label>Número de Cuenta (EJ: 900-111)</label><input type="text" name="numero_cuenta" value={formData.numero_cuenta} onChange={handleChange} required /></div>
               <div className="form-group"><label>Saldo Inicial ($)</label><input type="number" name="saldo" value={formData.saldo} onChange={handleChange} /></div>
             </div>
@@ -85,11 +99,12 @@ export default function CuentasManager() {
           <button className="btn btn-secondary" onClick={fetchCuentas} disabled={loading} style={{ padding: '0.4rem' }}><RefreshCw size={18} /></button>
         </div>
         <table className="data-table">
-          <thead><tr><th>ID</th><th>Número Cuenta</th><th style={{ textAlign: 'right' }}>Saldo Total</th></tr></thead>
+          <thead><tr><th>ID</th><th>Cédula Dueño (ID)</th><th>Número Cuenta</th><th style={{ textAlign: 'right' }}>Saldo Total</th></tr></thead>
           <tbody>
             {cuentas.map(c => (
               <tr key={c.id}>
                 <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>En sistema: {c.id}</td>
+                <td>Dueño ID: <strong>{c.usuario_id}</strong></td>
                 <td><strong>{c.numero_cuenta}</strong></td>
                 <td style={{ textAlign: 'right', color: 'var(--success)', fontWeight: 'bold' }}>$ {parseFloat(c.saldo).toLocaleString('es-CO')}</td>
               </tr>
