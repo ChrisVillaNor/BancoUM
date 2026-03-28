@@ -6,16 +6,31 @@ export default function Login({ onLogin, onBack, onGoRegister }) {
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
     
     // Simulación de "Authentication Wall" para proteger el Dashboard real
     // Solo permitiremos paso al Administrador Master en la presentación:
     if (email === 'admin@bancoum.edu' && password === 'admin123') {
-      onLogin(); // Entra al ecosistema VIP (Dashboard)
-    } else {
-      setErrorMsg('Credenciales inválidas. Acceso denegado a la bóveda.');
+      onLogin({ role: 'admin', nombre: 'Admin Master' }); // Entra al ecosistema VIP (Dashboard)
+      return;
+    }
+
+    // SI NO ES ADMIN, tratar de loguear como Cliente Normal de PostgreSQL
+    try {
+      const resp = await fetch('/api/clientes/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, numero_documento: password })
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data.error || 'Credenciales inválidas.');
+      }
+      onLogin(data.user); // data.user trae id, nombre, email, role: 'client'
+    } catch(err) {
+      setErrorMsg(err.message);
     }
   };
 

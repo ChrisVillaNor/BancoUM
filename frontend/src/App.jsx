@@ -7,11 +7,12 @@ import CatalogosManager from './components/CatalogosManager';
 import LandingPage from './components/LandingPage';
 import Login from './components/Login';
 import Register from './components/Register';
+import ClientDashboard from './components/ClientDashboard';
 
 function App() {
   const [view, setView] = useState('landing');
   const [activeTab, setActiveTab] = useState('clientes');
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Auth Wall Guard
+  const [currentUser, setCurrentUser] = useState(null); // Auth Wall Guard Object
 
   if (view === 'landing') {
     return <LandingPage onViewChange={setView} />;
@@ -20,8 +21,8 @@ function App() {
   if (view === 'login') {
     return (
       <Login 
-        onLogin={() => {
-          setIsAuthenticated(true);
+        onLogin={(userData) => {
+          setCurrentUser(userData);
           setView('dashboard');
         }} 
         onBack={() => setView('landing')}
@@ -41,10 +42,10 @@ function App() {
   }
 
   // SI INTENTA ENTRAR AL DASHBOARD SIN LOGIN, PA' FUERA.
-  if (view === 'dashboard' && !isAuthenticated) {
+  if (view === 'dashboard' && !currentUser) {
      return <Login 
-        onLogin={() => {
-          setIsAuthenticated(true);
+        onLogin={(userData) => {
+          setCurrentUser(userData);
           setView('dashboard');
         }} 
         onBack={() => setView('landing')}
@@ -52,6 +53,18 @@ function App() {
       />;
   }
 
+  // PORTAL DE CLIENTE NORMAL
+  if (view === 'dashboard' && currentUser.role === 'client') {
+     return <ClientDashboard 
+        userData={currentUser} 
+        onLogout={() => {
+           setCurrentUser(null);
+           setView('landing');
+        }} 
+     />;
+  }
+
+  // --- DESDE AQUI ES EL PORTAL DEL ADMINISTRADOR ---
   return (
     <div className="app-container">
       <aside className="sidebar">
@@ -79,7 +92,7 @@ function App() {
 
         <div style={{ marginTop: 'auto' }}>
           <a className="nav-link" style={{ color: '#d32f2f' }} onClick={() => {
-             setIsAuthenticated(false);
+             setCurrentUser(null);
              setView('landing');
           }}>
             <LogOut size={18} /> Cerrar Sesión Segura

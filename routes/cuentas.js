@@ -11,6 +11,16 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// Obtener las cuentas específicas de un cliente
+router.get('/cliente/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const result = await pool.query('SELECT * FROM cuenta WHERE usuario_id = $1 ORDER BY id DESC', [userId]);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Crear una nueva cuenta inicial
 router.post('/', async (req, res) => {
