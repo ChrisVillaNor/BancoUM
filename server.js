@@ -6,10 +6,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Main Root Route Check
-app.get('/', (req, res) => {
-  res.send('Bank Backend API is Running');
-});
 
 // Import and use routes
 app.use('/api/clientes', require('./routes/clientes'));
