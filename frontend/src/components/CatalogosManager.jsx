@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Database, Save, X, RefreshCw, FolderOpen } from 'lucide-react';
 
-const API_CATALOGOS = 'http://localhost:3000/api/catalogos';
+const API_URL = '/api/catalogos';
 const TABLES = [
   { id: 'tipo_cuenta', label: 'Tipos de Cuenta' },
   { id: 'tipo_movimiento', label: 'Tipos de Movimiento' },

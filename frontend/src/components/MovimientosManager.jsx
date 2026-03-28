@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Send, RefreshCw, Activity } from 'lucide-react';
 
-const API_MOVIMIENTOS = 'http://localhost:3000/api/movimientos';
+const API_URL = '/api/movimientos';
 
 export default function MovimientosManager() {
   const [movimientos, setMovimientos] = useState([]);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, Save, X, RefreshCw } from 'lucide-react';
 
-const API_CUENTAS = 'http://localhost:3000/api/cuentas';
+const API_URL = '/api/cuentas';
 
 export default function CuentasManager() {
   const [cuentas, setCuentas] = useState([]);

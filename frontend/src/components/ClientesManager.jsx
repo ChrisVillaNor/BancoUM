@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserPlus, Save, X, RefreshCw } from 'lucide-react';
 
-const API_URL = 'http://localhost:3000/api/clientes';
+const API_URL = '/api/clientes';
 
 export default function ClientesManager() {
   const [clientes, setClientes] = useState([]);
