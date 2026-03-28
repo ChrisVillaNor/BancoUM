@@ -1,0 +1,122 @@
+[
+  {
+    "table_name": "cuenta",
+    "column_name": "id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "cuenta",
+    "column_name": "usuario_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "cuenta",
+    "column_name": "tipo_cuenta_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "cuenta",
+    "column_name": "numero_cuenta",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "cuenta",
+    "column_name": "saldo",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "cuenta",
+    "column_name": "cupo_total",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "cuenta",
+    "column_name": "cupo_disponible",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "cuenta",
+    "column_name": "con_cuota_manejo",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "cuenta",
+    "column_name": "cuota_manejo_valor",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "cuenta",
+    "column_name": "tasa_interes",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "cuenta",
+    "column_name": "fecha_apertura",
+    "data_type": "timestamp without time zone"
+  },
+  {
+    "table_name": "cuenta",
+    "column_name": "password_pagos_hash",
+    "data_type": "character varying"
+  },
+  {
+    "table_name": "cuenta",
+    "column_name": "activa",
+    "data_type": "boolean"
+  },
+  {
+    "table_name": "cuenta",
+    "column_name": "fecha_corte",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "cuenta",
+    "column_name": "dia_pago",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "cuenta",
+    "column_name": "intereses_acumulados",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "cuenta",
+    "column_name": "mora_acumulada",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "movimiento",
+    "column_name": "id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "movimiento",
+    "column_name": "tipo_movimiento_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "movimiento",
+    "column_name": "cuenta_origen_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "movimiento",
+    "column_name": "cuenta_destino_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "movimiento",
+    "column_name": "punto_id",
+    "data_type": "integer"
+  },
+  {
+    "table_name": "movimiento",
+    "column_name": "valor",
+    "data_type": "numeric"
+  },
+  {
+    "table_name": "movimiento",
+    "column_name": "fecha",
+    "data_type": "timestamp without time zone"
+  }
+]
