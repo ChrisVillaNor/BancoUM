@@ -35,7 +35,12 @@ export default function Register({ onBack, onSuccess, onGoLogin }) {
       });
       
       if (!response.ok) {
-        throw new Error('El documento o correo ya está registrado en nuestra bóveda.');
+        let msg = 'Error en el registro';
+        try {
+          const data = await response.json();
+          msg = data.error || msg;
+        } catch(e) {}
+        throw new Error(msg);
       }
       
       // Si salió bien
