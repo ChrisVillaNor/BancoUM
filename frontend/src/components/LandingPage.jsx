@@ -19,10 +19,10 @@ export default function LandingPage({ onViewChange }) {
         </div>
         <div className="landing-actions">
            {/* El botón Iniciar sesión es ahora sutil dorado */}
-          <button className="landing-nav-link btn-text-gold" onClick={() => onViewChange('dashboard')}>
+          <button className="landing-nav-link btn-text-gold" onClick={() => onViewChange('login')}>
             Acceso Clientes
           </button>
-          <button className="btn-brand-gold" onClick={() => onViewChange('dashboard')}>
+          <button className="btn-brand-gold" onClick={() => onViewChange('register')}>
             Únete a UM
           </button>
         </div>
@@ -41,7 +41,7 @@ export default function LandingPage({ onViewChange }) {
             Banco UM no es una simple caja fuerte; es un ecosistema financiero inteligente, transparente y diseñado sin letra pequeña. Protegemos tu esfuerzo hoy para multiplicar tus oportunidades de mañana.
           </p>
           <div className="hero-buttons">
-            <button className="btn-brand-gold" onClick={() => onViewChange('dashboard')}>
+            <button className="btn-brand-gold" onClick={() => onViewChange('register')}>
                Descubrir la bóveda <ArrowRight size={18} style={{marginLeft: '8px'}} />
             </button>
           </div>

@@ -5,13 +5,51 @@ import CuentasManager from './components/CuentasManager';
 import MovimientosManager from './components/MovimientosManager';
 import CatalogosManager from './components/CatalogosManager';
 import LandingPage from './components/LandingPage';
+import Login from './components/Login';
+import Register from './components/Register';
 
 function App() {
   const [view, setView] = useState('landing');
   const [activeTab, setActiveTab] = useState('clientes');
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Auth Wall Guard
 
   if (view === 'landing') {
     return <LandingPage onViewChange={setView} />;
+  }
+
+  if (view === 'login') {
+    return (
+      <Login 
+        onLogin={() => {
+          setIsAuthenticated(true);
+          setView('dashboard');
+        }} 
+        onBack={() => setView('landing')}
+        onGoRegister={() => setView('register')}
+      />
+    );
+  }
+
+  if (view === 'register') {
+    return (
+      <Register 
+        onBack={() => setView('landing')}
+        onSuccess={() => setView('login')}
+        onGoLogin={() => setView('login')}
+      />
+    );
+  }
+
+  // SI INTENTA ENTRAR AL DASHBOARD SIN LOGIN, PA' FUERA.
+  if (view === 'dashboard' && !isAuthenticated) {
+     return <Login 
+        onLogin={() => {
+          setIsAuthenticated(true);
+          setView('dashboard');
+        }} 
+        onBack={() => setView('landing')}
+        onGoRegister={() => setView('register')}
+      />;
   }
 
   return (
@@ -40,8 +78,11 @@ function App() {
         </nav>
 
         <div style={{ marginTop: 'auto' }}>
-          <a className="nav-link" style={{ color: '#d32f2f' }} onClick={() => setView('landing')}>
-            <LogOut size={18} /> Salir (Inicio)
+          <a className="nav-link" style={{ color: '#d32f2f' }} onClick={() => {
+             setIsAuthenticated(false);
+             setView('landing');
+          }}>
+            <LogOut size={18} /> Cerrar Sesión Segura
           </a>
         </div>
       </aside>
