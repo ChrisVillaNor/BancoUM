@@ -4,15 +4,24 @@ import ClientesManager from './components/ClientesManager';
 import CuentasManager from './components/CuentasManager';
 import MovimientosManager from './components/MovimientosManager';
 import CatalogosManager from './components/CatalogosManager';
+import LandingPage from './components/LandingPage';
 
 function App() {
+  const [view, setView] = useState('landing');
   const [activeTab, setActiveTab] = useState('clientes');
+
+  if (view === 'landing') {
+    return <LandingPage onViewChange={setView} />;
+  }
 
   return (
     <div className="app-container">
       <aside className="sidebar">
-        <div>
-          <h1>Banco UM</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer' }} onClick={() => setView('landing')}>
+          <div style={{ backgroundColor: 'var(--brand-dark)', color: 'white', padding: '6px', borderRadius: '6px' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22v-7l-2-2"></path><path d="m17 8-5-5-5 5"></path><path d="M12 15V3"></path></svg>
+          </div>
+          <h1 style={{ color: 'var(--brand-dark)', margin: 0 }}>BancoUM</h1>
         </div>
         
         <nav className="nav-links">
@@ -31,8 +40,8 @@ function App() {
         </nav>
 
         <div style={{ marginTop: 'auto' }}>
-          <a className="nav-link" style={{ color: '#d32f2f' }}>
-            <LogOut size={18} /> Salir
+          <a className="nav-link" style={{ color: '#d32f2f' }} onClick={() => setView('landing')}>
+            <LogOut size={18} /> Salir (Inicio)
           </a>
         </div>
       </aside>

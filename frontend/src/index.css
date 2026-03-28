@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
   --bg-color: #fcfbf9; /* Warm beige clear background */
@@ -8,8 +8,11 @@
   --text-muted: #576066;
   --accent-color: #A37F5D; /* Elegant golden brown / beige accent */
   --accent-hover: #8C6A4A;
+  --brand-dark: #121817; /* Slate Black para contraste corporativo */
   --success: #6CA580;
   --border: #e8e2d7;
+  
+  --gold-glow: rgba(163, 127, 93, 0.3);
 }
 
 * {
@@ -25,7 +28,7 @@ body {
   min-height: 100vh;
 }
 
-/* Glassmorphism Classes */
+/* Glassmorphism Classes (Dashboard) */
 .glass-panel {
   background: var(--card-bg);
   backdrop-filter: blur(12px);
@@ -35,7 +38,7 @@ body {
   border-radius: 16px;
 }
 
-/* Layout */
+/* Layout (Dashboard) */
 .app-container {
   display: flex;
   height: 100vh;
@@ -95,7 +98,7 @@ body {
   font-weight: 600;
 }
 
-/* Buttons */
+/* Buttons (Global) */
 .btn {
   padding: 0.6rem 1.2rem;
   border-radius: 8px;
@@ -184,4 +187,494 @@ input:focus, select:focus {
   font-weight: 600;
   background: #e8f5e9;
   color: var(--success);
+}
+
+/* ==============================================================
+   REDISEÑO LANDING PAGE VIP (BEIGE & DORADO)
+   ============================================================== */
+.landing-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  /* Fondo general Beige más cálido para evocar BancoUM corporativo */
+  background-color: var(--sidebar-bg);
+  background-image: radial-gradient(circle at 100% 0%, #fffbf2 0%, transparent 40%),
+                    radial-gradient(circle at 0% 100%, #fffbf2 0%, transparent 40%);
+  overflow-x: hidden;
+}
+
+.landing-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 5%;
+  position: absolute;
+  top: 0; left: 0; width: 100%;
+  z-index: 100;
+}
+
+.landing-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--brand-dark);
+  letter-spacing: -0.5px;
+}
+
+.landing-logo-icon {
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+  padding: 8px;
+  border-radius: 8px;
+  color: white;
+  display: flex;
+  box-shadow: 0 4px 15px var(--gold-glow);
+}
+
+.landing-nav-links {
+  display: none;
+}
+@media (min-width: 768px) {
+  .landing-nav-links {
+    display: flex;
+    gap: 3rem;
+  }
+}
+
+.landing-nav-link {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: color 0.2s;
+  cursor: pointer;
+  background: none; border: none;
+}
+.landing-nav-link:hover {
+  color: var(--accent-color);
+}
+.btn-text-gold {
+  color: var(--accent-hover);
+}
+
+.landing-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.btn-brand-gold {
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+  color: white;
+  padding: 0.8rem 1.8rem;
+  border-radius: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  display: inline-flex;
+  align-items: center;
+  box-shadow: 0 6px 20px rgba(163, 127, 93, 0.2);
+}
+.btn-brand-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(163, 127, 93, 0.4);
+}
+
+/* HERO */
+.hero-section {
+  display: flex;
+  flex-direction: column;
+  padding: 11rem 5% 5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+@media (min-width: 992px) {
+  .hero-section {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.hero-content {
+  flex: 1;
+  max-width: 550px;
+  z-index: 10;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: white;
+  color: var(--accent-color);
+  padding: 0.5rem 1rem;
+  border-radius: 30px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+}
+
+.hero-title {
+  font-size: 3.8rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--brand-dark);
+  margin-bottom: 1.5rem;
+  letter-spacing: -1.5px;
+}
+.hero-title span {
+  color: var(--accent-color); /* Respaldo absoluto (Dorado) */
+}
+
+.hero-subtitle {
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin-bottom: 2.5rem;
+  max-width: 480px;
+}
+
+.icon-gold { color: var(--accent-color); }
+.icon-gold-solid { color: var(--accent-color); }
+.icon-dark-solid { color: var(--brand-dark); }
+
+/* VISUAL TARJETA VIP (DISEÑO ROMPEDOR Y ORIGINAL) */
+.hero-visual {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 4rem;
+  position: relative;
+}
+@media (min-width: 992px) {
+  .hero-visual {
+    margin-top: 0;
+    justify-content: flex-end;
+  }
+}
+
+.css-vip-card {
+  width: 320px;
+  height: 480px; /* Vertical ahora */
+  background: rgba(18, 24, 23, 0.95); /* Negro/Gris Pizarra Mate */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 2.5rem 1.8rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: white;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 20px 30px 60px rgba(0, 0, 0, 0.15),
+              -10px -10px 40px rgba(255, 255, 255, 0.5);
+  transform: perspective(1000px) rotateY(-15deg) rotateX(5deg) scale(1.05); /* Efecto 3D masivo */
+  transition: all 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+  overflow: hidden;
+}
+.css-vip-card:hover {
+  transform: perspective(1000px) rotateY(0deg) rotateX(0deg) scale(1.1);
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.2);
+}
+
+.css-vip-glow {
+  position: absolute;
+  top: -20%; left: -20%;
+  width: 140%; height: 140%;
+  background: radial-gradient(circle at 50% 0%, var(--gold-glow), transparent 60%);
+  pointer-events: none;
+}
+
+.vip-card-top {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.vip-card-logo {
+  font-weight: 800;
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+}
+.vip-card-type {
+  letter-spacing: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent-color); /* PLATINUM en Dorado */
+}
+
+.vip-card-middle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 3rem 0;
+}
+.vip-chip {
+  width: 50px;
+  height: 60px; /* Chip vertical ahumado */
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  position: relative;
+}
+.vip-chip::before, .vip-chip::after {
+  content: ''; position: absolute;
+  width: 100%; border-top: 1px solid rgba(255,255,255,0.2); left: 0;
+}
+.vip-chip::before { top: 30%; }
+.vip-chip::after { top: 70%; }
+
+.vip-contactless { color: rgba(255,255,255,0.5); }
+
+.vip-card-number {
+  font-family: monospace;
+  font-size: 1.2rem;
+  letter-spacing: 4px;
+  display: flex;
+  flex-direction: column; /* Números en vertical */
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  color: white;
+}
+.vip-card-number .hidden { opacity: 0.5; font-size: 0.9rem; }
+
+.vip-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 1.5rem;
+}
+.vip-card-bottom small {
+  font-size: 0.65rem;
+  opacity: 0.5;
+  display: block;
+  margin-bottom: 0.3rem;
+  letter-spacing: 1px;
+}
+.vip-card-bottom strong {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--accent-hover); /* Nombre resalta en Arena */
+}
+
+/* PRODUCTS GRID */
+.products-section {
+  padding: 5rem 5% 8rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.products-header {
+  text-align: left;
+  max-width: 600px;
+  margin-bottom: 4rem;
+}
+.products-header h2 {
+  font-size: 2.8rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: var(--brand-dark);
+  letter-spacing: -1px;
+}
+.products-header p {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+@media (min-width: 768px) {
+  .products-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.product-card-gold {
+  background: white;
+  border-radius: 24px;
+  padding: 3rem 2.5rem;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+}
+.product-card-gold:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 50px rgba(163, 127, 93, 0.1);
+}
+.product-icon-box {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+.bg-gold-light { background-color: var(--sidebar-bg); }
+.bg-dark-light { background-color: #e2e8e4; }
+.bg-white { background-color: white; color: var(--accent-color); }
+
+.product-card-gold h3 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: var(--brand-dark);
+}
+.product-card-gold p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 2.5rem;
+}
+.product-features {
+  list-style: none;
+  margin-top: auto;
+}
+.product-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  font-weight: 500;
+  margin-bottom: 1.2rem;
+}
+.featured-card {
+  background: linear-gradient(135deg, var(--brand-dark), #1f2b2a);
+  color: white;
+}
+.featured-badge {
+  position: absolute;
+  top: -15px; right: 30px;
+  background: var(--accent-color);
+  color: white;
+  padding: 0.4rem 1.2rem;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+.featured-list li { color: rgba(255,255,255,0.9); }
+
+/* BENEFITS */
+.benefits-section-gold {
+  max-width: 1200px;
+  margin: 0 auto 5rem;
+  padding: 5rem 5%;
+  background: white;
+  border-radius: 30px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+}
+.benefits-section-gold h2 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 3rem;
+  color: var(--brand-dark);
+  text-align: center;
+}
+.benefits-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+@media (min-width: 768px) {
+  .benefits-wrapper { flex-direction: row; }
+}
+.benefit-gold-card {
+  flex: 1;
+  text-align: center;
+}
+.benefit-gold-card h4 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin: 1.5rem 0 0.8rem;
+  color: var(--brand-dark);
+}
+.benefit-gold-card p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-width: 250px;
+  margin: 0 auto;
+}
+
+/* FOOTER ÚNICO UM */
+.landing-footer-gold {
+  background: var(--sidebar-bg); /* Beige base en el Footer! */
+  padding: 5rem 5% 2rem;
+  border-top: 1px solid var(--border);
+}
+
+.footer-gold-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+@media (min-width: 768px) {
+  .footer-gold-content { grid-template-columns: 1fr 1fr; }
+}
+
+.footer-main-brand .footer-brand-title {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--brand-dark);
+  margin-bottom: 1.5rem;
+}
+.mission-statement {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1.7;
+  max-width: 400px;
+}
+
+.footer-links-gold {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+@media (min-width: 768px) {
+  .footer-links-gold { flex-direction: row; justify-content: space-around; }
+}
+.footer-col-gold h4 {
+  color: var(--accent-hover);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+.footer-col-gold p {
+  color: var(--text-main);
+  font-size: 0.95rem;
+  margin-bottom: 0.8rem;
+  font-weight: 500;
+}
+
+.footer-bottom-gold {
+  max-width: 1200px;
+  margin: 4rem auto 0;
+  padding-top: 2rem;
+  border-top: 2px solid rgba(163, 127, 93, 0.1); /* Linea dorada tenue */
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
 }
