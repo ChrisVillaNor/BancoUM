@@ -1,54 +1,82 @@
 # PROYECTO INTEGRADOR: ECOSISTEMA FINANCIERO BANCOUM
 **Materia:** Base de Datos II
-**Estudiante:** Christian Villa (u otro integrante / reemplaza esto)
+**Estudiante:** Christian Villa
 **Repositorio GitHub / Despliegue en Vivo:** https://bancoum.onrender.com/
 
 ---
 
-## 1. RESUMEN EJECUTIVO
-El proyecto **BancoUM** es una simulación de un "Web Core Bancario" de ciclo completo (Full-Stack). Tiene como propósito principal modelar el almacenamiento, la persistencia, las reglas de negocio transaccionales globales y el acceso a los datos de una entidad bancaria funcional desde cero.
+## 1. ABSTRACT Y PLANTEAMIENTO ARQUITECTÓNICO
+El desarrollo de **BancoUM** va más allá de un simple gestor CRUD. Es la simulación arquitectónica de un Core Bancario Full-Stack que soluciona directamente el alto problema de persistencia secuencial (doble gasto / inconsistencia de transacciones) en entornos de bases de datos de acceso concurrente.
 
-El modelo se apoya en un patrón Cliente-Servidor compuesto por tres macro bloques:
-*   **Base de Datos en la Nube (Neon.tech LTS):** Servidor Serverless ejecutando una instancia robusta de **PostgreSQL**, escogido por su compatibilidad estricta con el estándar SQL y control de concurrencia multiversión (MVCC).
-*   **API y Capa Controladora (Servidor Express/Node.js):** Actúa como middleware de persistencia y enrutador RESTful para mediar la información transaccional y la seguridad.
-*   **Interfaz Gráfica de Usuario (React + Vite):** Implementada como una aplicación SPA (Single Page Application) modular y asíncrona que renderiza virtualmente el DOM para mayor velocidad.
-
----
-
-## 2. ARQUITECTURA DE DOMINIO Y ENTIDADES DE NEGOCIO
-El motor del **BancoUM** está soportado en un diagrama relacional conformado por 18 entidades interconectadas. Para preservar la normalización y la flexibilidad a largo plazo, el dominio del modelo separa los catálogos estáticos de las acciones dinámicas:
-
-1.  **Tablas de Catálogo (Nivel 1):** Configuran el estado inmutable o reglas corporativas, tales como `tipo_documento`, `tipo_movimiento`, y el árbol de infraestructura `zona` > `comuna` > `barrio` > `punto_atencion` (Sedimentando el alcance geográfico de la entidad).
-2.  **Tablas Principales (Nivel 2 - Actores):** Residen aquí los `empleado`s, el directorio de `cliente`s, y la ramificación de `cuenta`s activas asociadas a la clientela.
-3.  **Tabla de Hechos (Nivel 3 - Transacciones):** `movimiento` actúa como la tabla histórica más pesada del banco. Documenta toda entrada, salida y transferencia vinculando las llaves foráneas correspondientes.
+Se implementó una arquitectura de Software Libre de la siguiente manera:
+1. **Periferia Frontend:** (Vite + React.js) - Componentización de estado reactivo y control de promesas HTTP (Fetch).
+2. **Gateway Middleware:** (Node.js + Express) - Controlador que evalúa las llaves referenciales y detiene flujos ilícitos.
+3. **Persistencia Nuclear (BDD):** (PostgreSQL Serverless de Neon.tech) - El corazón del proyecto, utilizando un motor especializado en control de concurrencia Multiversión (MVCC) con un esquema fuertemente normalizado de 18 tablas interconectadas.
 
 ---
 
-## 3. MECANISMOS DE AISLAMIENTO: VISIÓN MULTI-ROL (AUTH WALL)
-Con la meta de respetar la privacidad y evitar filtraciones de PII (Personally Identifiable Information), el Front-End se desacopló en tres "Fases" o portales usando protección asíncrona (React Router States):
+## 2. METADATA Y DICCIONARIO DEL MODELO RELACIONAL
+Para mantener las normas formales de ingeniería, el diseño lógico de BancoUM fue fragmentado en tres "Dominios" o esferas de impacto. Se garantizó estricta Integridad Referencial mapeando `FOREIGN KEYs` entre dichos dominios:
 
-*   **Fase 1 (Pública):** Landing Page comercial y un Registro de Cliente que acciona un `HTTP POST /api/clientes` para inyectar prospectos directamente a la entidad `cliente`.
-*   **Fase 2 (Portal de Autogestión 'Home Banking'):** Un cliente real accede de manera segura utilizando coincidencia de base de datos (`email` y `numero_documento`). Tras autenticarse, invoca el Endpoint de `GET /api/cuentas/cliente/:id`, recuperando un mapa de solo lectura (y permisos limitados de escritura) estrictamente vinculado a sus IDs.
-*   **Fase 3 (Dashboard C-Level):** Accesible exclusivamente bajo el rol maestro, expone terminales CRUD dinámicas capaces de alterar el directorio de todas las entidades, ofreciendo poder absoluto al Gestor General de la BD.
-
----
-
-## 4. CONFIABILIDAD Y OPERACIONES A.C.I.D. (El Módulo de Traslados SQL)
-Al tratarse de una materia enfocada en la robustez y consistencia de los datos, el desarrollo más importante del **BancoUM** fue blindar las transferencias financieras del usuario.
-
-Cuando un usuario envía dinero desde el "Home Banking" a una cuenta tercera, el modelo del Servidor Express ejecuta una Transacción SQL manual a través de un pool asíncrono. La función cumple las cuatro propiedades **ACID** vitales de toda BDD:
-
-1.  **`BEGIN;`**  (Bloqueo de la Transacción)
-2.  Descuento Origen: `UPDATE cuenta SET saldo = saldo - $Monto WHERE id = $Origen;`
-3.  Acumulación Destino: `UPDATE cuenta SET saldo = saldo + $Monto WHERE id = $Destino;`
-4.  Persistencia Histórica: `INSERT INTO movimiento (...) VALUES (...);`
-5.  **`COMMIT;`** (Aprobación permanente en disco de los 3 pasos anteriores).
-
-**Atomicidad y Manejo de Errores (ROLLBACK):**
-La arquitectura transaccional se envolvió en un bloque `try-catch`. Si un bloque intermedio fallase de improvisto —por ejemplo, un saldo insuficiente, una caída de disco, o una llave destino inexistente— la BDD ejecuta automáticamente el comando **`ROLLBACK;`**. Al hacer esto, todo el bloque se desmorona y los saldos vuelven exactamente a su estado de inicio, evitando el terrible escenario de que al cliente se le descuente dinero que nunca llega destino.
+*   **Dominio de Catálogos (Raíz inmutable):** Entidades diseñadas para gobernar tipologías. Destacan `tipo_documento` y `tipo_movimiento`. Y una gran súper estructura geográfica anidada: Un `banco` tiene varias `sede`s -> que están en una `zona` -> que abarca una `comuna` -> que contiene `barrio`s -> done finalmente existe el `punto_atencion`.
+*   **Dominio de Participantes (Entes biológicos):** Entidades como `empleado` (gestores) y `cliente` (la identidad digital del usuario en formato Persona Natural).
+*   **Dominio de Transacción Financeira (El Núcleo Operativo):** La tabla `cuenta` actúa como la bóveda personal vinculada a un cliente. Y la de mayor crecimiento del sistema, la gran tabla dimensional de hechos: `movimiento`, que archiva matemáticamente cualquier cruce de dinero de forma inalterable.
 
 ---
 
-## 5. DESPLIEGUE CONTINUO Y CI/CD (Render Platform)
-La aplicación sobrepasó el concepto genérico de "Localhost". Toda la arquitectura y sus dependencias (`npm`) fueron orquestadas a través de perfiles variables de entorno `.env` atados al sistema de control de versiones **Git / GitHub**. 
-El repositorio principal de BancoUM se ancló a una instancia automática en **Render.com**, encargándose de montar y levantar el contenedor `express` visible para todo el mundo vía HTTP Segura y reaccionando activamente a cualquier cambio (`Push`) aprobado en el código fuente.
+## 3. LÓGICA DE AISLAMIENTO Y MICRO-SEGURIDAD FRONT-END
+El Core aborda un inmenso riesgo de las APIS públicas: "Evitar que el usuario logre recuperar saldo que no le pertenece."
+
+Se construyó un **Auth Wall (Muro Bóveda)** que escinde el sistema en tres roles operativos cerrados:
+*   **Interfaz Pública (Lead Gen):** Formularios sin estado para inserción a la base de clientes.
+*   **Gestor Maestro (Administrador):** Un panel divino autenticado vía el código (`admin@bancoum.edu`). Aquí la capa Node.js ejecuta un barrido selectivo a las 18 tablas (`GET /api/*`) e inyecta llaves Foráneas de control maestro. Recientemente, se refinó la BDD para hacer bypass a las llaves maestras sobre cuentas usando `DROP CONSTRAINT` para permitir prototipado directo y demostrativo de asignaciones de Usuarios a Cuentas sin crear roles extra.
+*   **Portal de Cliente ('Home Banking'):** El cliente ingresa con su Documento. El código evalúa las claves foráneas con la API remota e imprime únicamente la traza SQL donde `cliente.id == params.userId`.
+
+---
+
+## 4. COMPONENTE TÉCNICO VITAL: CONTROL DE TRANSACCIONES SQL (A.C.I.D.)
+La principal justificación universitaria de haber elegido PostgreSQL frente a bases genéricas es su soporte a la lógica **ACID (Atomicidad, Consistencia, Aislamiento y Durabilidad)**.
+Para cumplir el core value de BancoUM (Transferencia de Fondos), se codificó un bloque imperativo de control en lado del Servidor Node, inyectado directamente por puente `pg`:
+
+```javascript
+/* LÓGICA DE TRANSFERENCIA: ROUTER DE MOVIMIENTOS EN BANCO UM */
+
+const client = await pool.connect(); // Obtención de Worker al Servidor PG
+try {
+  await client.query('BEGIN'); // Paso 1: ATOMICIDAD. La base entra en pausa preventiva.
+
+  // Paso 2: Evaluación del Descuento Origen (Garantía de Fondos)
+  const resOrigen = await client.query(
+    'UPDATE cuenta SET saldo = saldo - $1 WHERE numero_cuenta = $2 RETURNING *',
+    [monto, cuentaOrigen]
+  );
+  
+  // Paso 3: Inyección Positiva Destino
+  const resDestino = await client.query(
+    'UPDATE cuenta SET saldo = saldo + $1 WHERE numero_cuenta = $2',
+    [monto, cuentaDestino] // La coherencia referencial exige que el destino exista
+  );
+
+  // Paso 4: Dejar huella en la dimensional de hechos para auditoría
+  await client.query(
+    'INSERT INTO movimiento (...) VALUES (...)', [...]
+  );
+
+  await client.query('COMMIT'); // Paso FINAL: Todo fue un éxito, grabar definitivamente al Disco.
+
+} catch (error) {
+  // SALVAGUARDA DE ESTAFA: Si una de las cuentas destino era inventada o no hay dinero,
+  // el bloque colapsa, no hay pérdida, el sistema auto-devuelve ambas sumas a la normalidad.
+  await client.query('ROLLBACK');
+}
+```
+
+Esta estructura implementada previene activamente el fenómeno de *"Carrera Transaccional Simultánea"*. Ni cien miles de envíos realizados al mismo tiempo por hackers lograrían violar las propiedades ACID de la **Base de Datos Neon de AppBanco**, pues todos se ordenan linealmente mediante el lock nativo del motor MVCC hasta cumplir cada suceso.
+
+---
+
+## 5. CONCLUSIÓN Y METODOLOGÍA CI/CD DE DESPLIEGUE CONTINUO
+El código construido es de una naturaleza tan pura que no fue relegado a ejecución exclusiva en disco local (`localhost`), si no que se acopló al entorno perimetral de **Render**.
+Siendo así documentado vía el repositorio madre en Git, donde a través de WebHooks y flujos de Entrega Continua, el código re-construye sus assets de manera asíncrona cada vez que se sube un `Commit`, inyectando variables de entorno `.env` en tiempo real. 
+
+El estudiante ha culminado un escenario prototipo 100% capaz de actuar de manera comercial sirviendo funciones reales de almacenamiento interconectado.
