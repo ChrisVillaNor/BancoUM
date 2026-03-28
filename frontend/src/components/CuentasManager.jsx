@@ -35,10 +35,14 @@ export default function CuentasManager() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Generar automáticamente un número de cuenta aleatorio estilo banco
+      const cuentaAutogenerada = Math.floor(Math.random() * 900000000) + 100000000;
+      const payload = { ...formData, numero_cuenta: cuentaAutogenerada.toString() };
+
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -83,8 +87,7 @@ export default function CuentasManager() {
                     ))}
                  </select>
               </div>
-              <div className="form-group"><label>Número de Cuenta (EJ: 900-111)</label><input type="text" name="numero_cuenta" value={formData.numero_cuenta} onChange={handleChange} required /></div>
-              <div className="form-group"><label>Saldo Inicial ($)</label><input type="number" name="saldo" value={formData.saldo} onChange={handleChange} /></div>
+              <div className="form-group"><label>Saldo Inicial asignado ($)</label><input type="number" name="saldo" value={formData.saldo} onChange={handleChange} /></div>
             </div>
             <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <button type="submit" className="btn btn-primary"><Save size={18} /> Guardar Banco</button>
