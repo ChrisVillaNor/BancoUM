@@ -10,7 +10,8 @@ export default function Register({ onBack, onSuccess, onGoLogin }) {
     fecha_nacimiento: '',
     telefono: '',
     email: '',
-    direccion: ''
+    direccion: '',
+    contrasena: ''
   });
   
   const [loading, setLoading] = useState(false);
@@ -128,6 +129,11 @@ export default function Register({ onBack, onSuccess, onGoLogin }) {
           <div className="form-group-gold col-span-2">
             <label>Dirección de Residencia</label>
             <input type="text" name="direccion" value={formData.direccion} onChange={handleChange} required />
+          </div>
+
+          <div className="form-group-gold col-span-2">
+            <label>Contraseña</label>
+            <input type="password" name="contrasena" value={formData.contrasena} onChange={handleChange} required />
           </div>
 
           <button type="submit" className="btn-brand-gold col-span-2" style={{justifyContent: 'center', marginTop: '1rem'}} disabled={loading}>

@@ -29,7 +29,7 @@ export default function Login({ onLogin, onBack, onGoRegister }) {
       const resp = await fetch('/api/clientes/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, numero_documento: password })
+        body: JSON.stringify({ email, contrasena: password })
       });
       const data = await resp.json();
       if (!resp.ok) {

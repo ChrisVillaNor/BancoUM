@@ -25,21 +25,22 @@ router.post('/', async (req, res) => {
     telefono, 
     email, 
     direccion, 
-    comuna 
+    comuna,
+    contrasena
   } = req.body;
 
   try {
     const query = `
       INSERT INTO cliente (
         tipo_documento, numero_documento, nombre, apellido, 
-        fecha_nacimiento, telefono, email, direccion, comuna, activo
+        fecha_nacimiento, telefono, email, direccion, comuna, contrasena, activo
       ) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true)
       RETURNING *;
     `;
     const values = [
       tipo_documento, numero_documento, nombre, apellido, 
-      fecha_nacimiento, telefono, email, direccion, comuna || null
+      fecha_nacimiento, telefono, email, direccion, comuna || null, contrasena
     ];
     
     const result = await pool.query(query, values);
@@ -49,14 +50,14 @@ router.post('/', async (req, res) => {
     res.status(500).json({ error: 'Error al registrar el cliente, revisa que no haya datos duplicados.' });
   }
 });
-// Iniciar sesión (Login de Cliente) usando Documento y Correo
+// Iniciar sesión (Login de Cliente) usando Correo y Contrasena
 router.post('/login', async (req, res) => {
-  const { email, numero_documento } = req.body;
+  const { email, contrasena } = req.body;
   try {
-    const query = 'SELECT id, nombre, apellido, email, numero_documento FROM cliente WHERE email = $1 AND numero_documento = $2 AND activo = true';
-    const result = await pool.query(query, [email, numero_documento]);
+    const query = 'SELECT id, nombre, apellido, email, numero_documento FROM cliente WHERE email = $1 AND contrasena = $2 AND activo = true';
+    const result = await pool.query(query, [email, contrasena]);
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Credenciales inválidas. Verifique su correo o su N° de documento.' });
+      return res.status(401).json({ error: 'Credenciales inválidas. Verifique su correo o su contraseña.' });
     }
     // Si entró, le damos un "token" simulado con su data
     res.json({
