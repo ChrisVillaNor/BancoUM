@@ -5,14 +5,21 @@ export default function Login({ onLogin, onBack, onGoRegister }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [failedAttempts, setFailedAttempts] = useState(0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
     
+    if (failedAttempts >= 3) {
+      setErrorMsg('Acceso bloqueado por exceso de intentos fallidos. Contacte a soporte.');
+      return;
+    }
+    
     // Simulación de "Authentication Wall" para proteger el Dashboard real
     // Solo permitiremos paso al Administrador Master en la presentación:
     if (email === 'admin@bancoum.edu' && password === 'admin123') {
+      setFailedAttempts(0); // Reset on success
       onLogin({ role: 'admin', nombre: 'Admin Master' }); // Entra al ecosistema VIP (Dashboard)
       return;
     }
@@ -28,9 +35,16 @@ export default function Login({ onLogin, onBack, onGoRegister }) {
       if (!resp.ok) {
         throw new Error(data.error || 'Credenciales inválidas.');
       }
+      setFailedAttempts(0); // Reset on success
       onLogin(data.user); // data.user trae id, nombre, email, role: 'client'
     } catch(err) {
-      setErrorMsg(err.message);
+      const newAttempts = failedAttempts + 1;
+      setFailedAttempts(newAttempts);
+      if (newAttempts >= 3) {
+        setErrorMsg('Acceso bloqueado por exceso de intentos fallidos. Contacte a soporte.');
+      } else {
+        setErrorMsg(`${err.message} (Intentos restantes: ${3 - newAttempts})`);
+      }
     }
   };
 
@@ -53,21 +67,21 @@ export default function Login({ onLogin, onBack, onGoRegister }) {
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group-gold">
-            <label>Correo Electrónico Institucional</label>
+            <label>Correo Electrónico</label>
             <div className="input-with-icon">
                <Mail size={18} className="input-icon" />
                <input 
                  type="email" 
                  value={email}
                  onChange={(e) => setEmail(e.target.value)}
-                 placeholder="admin@bancoum.edu" 
+                 placeholder="ejemplo@correo.com" 
                  required 
                />
             </div>
           </div>
           
           <div className="form-group-gold">
-            <label>Código de Seguridad</label>
+            <label>Contraseña</label>
             <div className="input-with-icon">
                <Lock size={18} className="input-icon" />
                <input 
