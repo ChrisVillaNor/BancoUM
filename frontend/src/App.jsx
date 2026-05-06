@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, CreditCard, Activity, Database, LogOut } from 'lucide-react';
+import { Users, CreditCard, Activity, Database, LogOut, MessageSquare } from 'lucide-react';
 import ClientesManager from './components/ClientesManager';
 import CuentasManager from './components/CuentasManager';
 import MovimientosManager from './components/MovimientosManager';
@@ -8,6 +8,7 @@ import LandingPage from './components/LandingPage';
 import Login from './components/Login';
 import Register from './components/Register';
 import ClientDashboard from './components/ClientDashboard';
+import ChatNL2SQL from './components/ChatNL2SQL';
 
 function App() {
   const [view, setView] = useState('landing');
@@ -106,6 +107,9 @@ function App() {
         {activeTab === 'movimientos' && <MovimientosManager />}
         {activeTab === 'catalogos' && <CatalogosManager />}
       </main>
+
+      {/* Asistente Flotante para Administradores */}
+      <ChatNL2SQL userData={currentUser} />
     </div>
   );
 }

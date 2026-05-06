@@ -1,0 +1,957 @@
+--- CELL 1 ---
+# ============================================================
+# LIBRERÍAS
+# ============================================================
+
+import sqlite3
+import pandas as pd
+from datetime import datetime
+--- CELL 2 ---
+# ============================================================
+# CREAR / CONECTAR BASE DE DATOS
+# ============================================================
+
+nombre_bd = "banco.db"
+
+conn = sqlite3.connect(nombre_bd)
+cursor = conn.cursor()
+
+print(f"Base de datos '{nombre_bd}' creada y conectada correctamente.")
+--- CELL 3 ---
+# ============================================================
+# ACTIVAR FOREIGN KEYS
+# ============================================================
+
+cursor.execute("PRAGMA foreign_keys = ON;")
+print("Integridad referencial activada.")
+--- CELL 4 ---
+# ============================================================
+# ELIMINAR TABLAS SI YA EXISTEN
+# ============================================================
+
+cursor.executescript("""
+DROP TABLE IF EXISTS movimientos;
+DROP TABLE IF EXISTS cuentas;
+DROP TABLE IF EXISTS clientes;
+DROP TABLE IF EXISTS ciudad;
+""")
+
+conn.commit()
+print("Tablas anteriores eliminadas correctamente.")
+--- CELL 5 ---
+# ============================================================
+# TABLA: ciudad
+# ============================================================
+
+
+cursor.execute("""
+CREATE TABLE ciudad (
+    id_ciudad INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre_ciudad TEXT NOT NULL,
+    departamento TEXT NOT NULL
+);
+""")
+
+print("Tabla 'ciudad' creada correctamente.")
+--- CELL 6 ---
+# ============================================================
+# TABLA: clientes
+# ============================================================
+
+cursor.execute("""
+CREATE TABLE clientes (
+    id_cliente INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT NOT NULL,
+    apellido TEXT NOT NULL,
+    documento TEXT NOT NULL UNIQUE,
+    fecha_nacimiento TEXT NOT NULL,
+    id_ciudad INTEGER NOT NULL,
+    telefono TEXT,
+    correo TEXT,
+    FOREIGN KEY (id_ciudad) REFERENCES ciudad(id_ciudad)
+);
+""")
+
+print("Tabla 'clientes' creada correctamente.")
+--- CELL 7 ---
+# ============================================================
+# TABLA: cuentas
+# ============================================================
+
+cursor.execute("""
+CREATE TABLE cuentas (
+    id_cuenta INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_cliente INTEGER NOT NULL,
+    tipo_cuenta TEXT NOT NULL,
+    saldo REAL NOT NULL,
+    fecha_apertura TEXT NOT NULL,
+    estado TEXT NOT NULL,
+    FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente)
+);
+""")
+
+print("Tabla 'cuentas' creada correctamente.")
+--- CELL 8 ---
+# ============================================================
+# TABLA: movimientos
+# ============================================================
+
+cursor.execute("""
+CREATE TABLE movimientos (
+    id_movimiento INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_cuenta INTEGER NOT NULL,
+    fecha_movimiento TEXT NOT NULL,
+    tipo_movimiento TEXT NOT NULL,
+    valor REAL NOT NULL,
+    descripcion TEXT,
+    FOREIGN KEY (id_cuenta) REFERENCES cuentas(id_cuenta)
+);
+""")
+
+print("Tabla 'movimientos' creada correctamente.")
+--- CELL 9 ---
+conn.commit()
+print("Modelo relacional creado exitosamente.")
+--- CELL 10 ---
+# ============================================================
+# INSERTAR DATOS EN ciudad
+# ============================================================
+
+ciudades = [
+    ("Bogotá", "Cundinamarca"),
+    ("Medellín", "Antioquia"),
+    ("Cali", "Valle del Cauca"),
+    ("Manizales", "Caldas"),
+    ("Barranquilla", "Atlántico")
+]
+
+cursor.executemany("""
+INSERT INTO ciudad (nombre_ciudad, departamento)
+VALUES (?, ?)
+""", ciudades)
+
+conn.commit()
+print("Datos insertados en 'ciudad'.")
+--- CELL 11 ---
+# ============================================================
+# INSERTAR DATOS EN clientes
+# ============================================================
+
+clientes = [
+    ("Ana", "Gómez", "1001", "1990-05-10", 1, "3001111111", "ana@correo.com"),
+    ("Luis", "Martínez", "1002", "1988-07-21", 2, "3002222222", "luis@correo.com"),
+    ("Carla", "Ramírez", "1003", "1995-03-14", 3, "3003333333", "carla@correo.com"),
+    ("Jorge", "López", "1004", "1982-11-30", 4, "3004444444", "jorge@correo.com"),
+    ("María", "Torres", "1005", "1998-09-08", 1, "3005555555", "maria@correo.com")
+]
+
+cursor.executemany("""
+INSERT INTO clientes (nombre, apellido, documento, fecha_nacimiento, id_ciudad, telefono, correo)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+""", clientes)
+
+conn.commit()
+print("Datos insertados en 'clientes'.")
+--- CELL 12 ---
+# ============================================================
+# INSERTAR DATOS EN cuentas
+# ============================================================
+
+cuentas = [
+    (1, "Ahorros",   2500000, "2023-01-15", "Activa"),
+    (1, "Corriente", 1200000, "2024-02-10", "Activa"),
+    (2, "Ahorros",   3400000, "2022-08-05", "Activa"),
+    (3, "Ahorros",    850000, "2024-01-22", "Activa"),
+    (4, "Corriente", 5600000, "2021-11-01", "Activa"),
+    (5, "Ahorros",   1750000, "2023-09-17", "Inactiva")
+]
+
+cursor.executemany("""
+INSERT INTO cuentas (id_cliente, tipo_cuenta, saldo, fecha_apertura, estado)
+VALUES (?, ?, ?, ?, ?)
+""", cuentas)
+
+conn.commit()
+print("Datos insertados en 'cuentas'.")
+--- CELL 13 ---
+# ============================================================
+# INSERTAR DATOS EN movimientos
+# ============================================================
+
+movimientos = [
+    (1, "2026-04-01", "Consignación", 500000, "Pago de nómina"),
+    (1, "2026-04-02", "Retiro", -200000, "Retiro cajero"),
+    (2, "2026-04-03", "Transferencia", -150000, "Pago servicios"),
+    (3, "2026-04-03", "Consignación", 800000, "Ingreso adicional"),
+    (4, "2026-04-04", "Retiro", -100000, "Compra supermercado"),
+    (5, "2026-04-05", "Consignación", 1200000, "Pago proveedor"),
+    (1, "2026-04-06", "Transferencia", -300000, "Transferencia a tercero"),
+    (3, "2026-04-06", "Retiro", -250000, "Retiro ventanilla"),
+    (4, "2026-04-07", "Consignación", 400000, "Abono"),
+    (6, "2026-04-07", "Retiro", -50000, "Débito automático")
+]
+
+cursor.executemany("""
+INSERT INTO movimientos (id_cuenta, fecha_movimiento, tipo_movimiento, valor, descripcion)
+VALUES (?, ?, ?, ?, ?)
+""", movimientos)
+
+conn.commit()
+print("Datos insertados en 'movimientos'.")
+--- CELL 14 ---
+# ============================================================
+# VER DATOS DE ciudad
+# ============================================================
+
+df_ciudad = pd.read_sql_query("SELECT * FROM ciudad", conn)
+df_ciudad
+--- CELL 15 ---
+# ============================================================
+# VER DATOS DE cuentas
+# ============================================================
+
+df_cuentas = pd.read_sql_query("SELECT * FROM cuentas", conn)
+df_cuentas
+--- CELL 16 ---
+# ============================================================
+# VER DATOS DE movimientos
+# ============================================================
+
+df_movimientos = pd.read_sql_query("SELECT * FROM movimientos", conn)
+df_movimientos
+--- CELL 17 ---
+# ============================================================
+# CONSULTA 1: CLIENTES Y SU CIUDAD
+# ============================================================
+
+consulta_1 = """
+SELECT
+    c.id_cliente,
+    c.nombre,
+    c.apellido,
+    ci.nombre_ciudad,
+    ci.departamento
+FROM clientes c
+INNER JOIN ciudad ci
+    ON c.id_ciudad = ci.id_ciudad
+ORDER BY c.id_cliente;
+"""
+
+pd.read_sql_query(consulta_1, conn)
+--- CELL 18 ---
+# ============================================================
+# CONSULTA 2: CUENTAS POR CLIENTE
+# ============================================================
+
+consulta_2 = """
+SELECT
+    cl.nombre || ' ' || cl.apellido AS cliente,
+    cu.id_cuenta,
+    cu.tipo_cuenta,
+    cu.saldo,
+    cu.estado
+FROM cuentas cu
+INNER JOIN clientes cl
+    ON cu.id_cliente = cl.id_cliente
+ORDER BY cliente;
+"""
+
+pd.read_sql_query(consulta_2, conn)
+--- CELL 19 ---
+# ============================================================
+# CONSULTA 3: MOVIMIENTOS CON CLIENTE
+# ============================================================
+
+consulta_3 = """
+SELECT
+    m.id_movimiento,
+    cl.nombre || ' ' || cl.apellido AS cliente,
+    cu.id_cuenta,
+    m.fecha_movimiento,
+    m.tipo_movimiento,
+    m.valor,
+    m.descripcion
+FROM movimientos m
+INNER JOIN cuentas cu
+    ON m.id_cuenta = cu.id_cuenta
+INNER JOIN clientes cl
+    ON cu.id_cliente = cl.id_cliente
+ORDER BY m.fecha_movimiento;
+"""
+
+pd.read_sql_query(consulta_3, conn)
+--- CELL 20 ---
+# ============================================================
+# CONSULTA 4: SALDO TOTAL POR CIUDAD
+# ============================================================
+
+consulta_4 = """
+SELECT
+    ci.nombre_ciudad,
+    SUM(cu.saldo) AS saldo_total
+FROM cuentas cu
+INNER JOIN clientes cl
+    ON cu.id_cliente = cl.id_cliente
+INNER JOIN ciudad ci
+    ON cl.id_ciudad = ci.id_ciudad
+GROUP BY ci.nombre_ciudad
+ORDER BY saldo_total DESC;
+"""
+
+pd.read_sql_query(consulta_4, conn)
+--- CELL 21 ---
+# ============================================================
+# CONSULTA 5: MOVIMIENTOS POR TIPO
+# ============================================================
+
+consulta_5 = """
+SELECT
+    tipo_movimiento,
+    COUNT(*) AS cantidad_movimientos,
+    SUM(valor) AS valor_total
+FROM movimientos
+GROUP BY tipo_movimiento
+ORDER BY cantidad_movimientos DESC;
+"""
+
+pd.read_sql_query(consulta_5, conn)
+--- CELL 22 ---
+# ============================================================
+# VER TABLAS DE LA BASE DE DATOS
+# ============================================================
+
+tablas = pd.read_sql_query("""
+SELECT name
+FROM sqlite_master
+WHERE type='table';
+""", conn)
+
+tablas
+--- CELL 23 ---
+# ============================================================
+# ESTRUCTURA DE LA TABLA clientes
+# ============================================================
+
+pd.read_sql_query("PRAGMA table_info(clientes);", conn)
+--- CELL 24 ---
+pd.read_sql_query("PRAGMA table_info(cuentas);", conn)
+--- CELL 25 ---
+pd.read_sql_query("PRAGMA table_info(movimientos);", conn)
+--- CELL 26 ---
+# ============================================================
+# FUNCIÓN PARA EJECUTAR CONSULTAS SQL
+# ============================================================
+
+def ejecutar_sql(query):
+    """
+    Ejecuta una consulta SQL sobre la base de datos SQLite
+    y devuelve el resultado en un DataFrame de pandas.
+    """
+    try:
+        resultado = pd.read_sql_query(query, conn)
+        return resultado
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+--- CELL 27 ---
+query_prueba = """
+SELECT nombre, apellido, correo
+FROM clientes;
+"""
+
+ejecutar_sql(query_prueba)
+--- CELL 28 ---
+# ============================================================
+# DICCIONARIO SEMÁNTICO INICIAL
+# ============================================================
+
+diccionario_semantico = {
+    "clientes": "Personas registradas en el banco",
+    "cuentas": "Productos financieros asociados a clientes",
+    "movimientos": "Transacciones realizadas en cuentas",
+    "ciudad": "Ubicación geográfica del cliente",
+    "saldo": "Dinero actual en una cuenta",
+    "consignación": "Ingreso de dinero a una cuenta",
+    "retiro": "Salida de dinero de una cuenta",
+    "transferencia": "Movimiento de dinero hacia otra cuenta o destino"
+}
+
+diccionario_semantico
+--- CELL 29 ---
+# ============================================================
+# CERRAR CONEXIÓN
+# ============================================================
+
+conn.close()
+print("Conexión cerrada correctamente.")
+--- CELL 33 ---
+# ============================================================
+# INSTALACIÓN DE DEPENDENCIAS
+# ============================================================
+
+!pip install -q -U langchain langchain-core langchain-openai langchain-community sqlalchemy pandas
+--- CELL 34 ---
+# ============================================================
+# IMPORTACIÓN DE LIBRERÍAS
+# ============================================================
+
+import os
+import sqlite3
+import pandas as pd
+from IPython.display import display
+from sqlalchemy import create_engine, text
+
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+--- CELL 35 ---
+esquema_bd = """
+Base de datos: banco
+
+Tablas:
+- ciudad(id_ciudad, nombre_ciudad, departamento)
+- clientes(id_cliente, nombre, apellido, documento, fecha_nacimiento, id_ciudad, telefono, correo)
+- cuentas(id_cuenta, id_cliente, tipo_cuenta, saldo, fecha_apertura, estado)
+- movimientos(id_movimiento, id_cuenta, fecha_movimiento, tipo_movimiento, valor, descripcion)
+
+Relaciones:
+- clientes.id_ciudad = ciudad.id_ciudad
+- cuentas.id_cliente = clientes.id_cliente
+- movimientos.id_cuenta = cuentas.id_cuenta
+"""
+--- CELL 36 ---
+# ============================================================
+# CONEXIÓN A LA BASE DE DATOS
+# ============================================================
+
+# sqlite3 para consultas sencillas con pandas
+# sqlalchemy porque es muy útil para integración con cadenas de IA
+
+ruta_bd = "banco.db"
+
+conn = sqlite3.connect(ruta_bd)
+engine = create_engine(f"sqlite:///{ruta_bd}")
+
+print(f"Conexión establecida correctamente con la base de datos: {ruta_bd}")
+--- CELL 37 ---
+# ============================================================
+# VERIFICAR TABLAS DISPONIBLES
+# ============================================================
+
+query_tablas = """
+SELECT name
+FROM sqlite_master
+WHERE type='table';
+"""
+
+df_tablas = pd.read_sql_query(query_tablas, conn)
+df_tablas
+--- CELL 38 ---
+# ============================================================
+# DATOS DE PRUEBA
+# ============================================================
+
+pd.read_sql_query("SELECT * FROM clientes LIMIT 5;", conn)
+--- CELL 39 ---
+# ============================================================
+# DESCRIPCIÓN SEMÁNTICA DEL ESQUEMA
+# ============================================================
+
+esquema_bd = """
+Base de datos: banco
+
+Tablas:
+
+1. ciudad
+- id_ciudad: identificador de la ciudad
+- nombre_ciudad: nombre de la ciudad
+- departamento: departamento de la ciudad
+
+2. clientes
+- id_cliente: identificador del cliente
+- nombre: nombre del cliente
+- apellido: apellido del cliente
+- documento: número de documento
+- fecha_nacimiento: fecha de nacimiento
+- id_ciudad: ciudad donde reside el cliente
+- telefono: número de teléfono
+- correo: correo electrónico
+
+3. cuentas
+- id_cuenta: identificador de la cuenta
+- id_cliente: cliente dueño de la cuenta
+- tipo_cuenta: Ahorros o Corriente
+- saldo: saldo actual
+- fecha_apertura: fecha de apertura de la cuenta
+- estado: estado de la cuenta. Valores válidos: Activa, Inactiva
+
+4. movimientos
+- id_movimiento: identificador del movimiento
+- id_cuenta: cuenta asociada al movimiento
+- fecha_movimiento: fecha del movimiento
+- tipo_movimiento: valores válidos: Consignación, Retiro, Transferencia
+- valor: valor del movimiento
+- descripcion: detalle del movimiento
+
+Relaciones:
+- clientes.id_ciudad -> ciudad.id_ciudad
+- cuentas.id_cliente -> clientes.id_cliente
+- movimientos.id_cuenta -> cuentas.id_cuenta
+"""
+print(esquema_bd)
+--- CELL 40 ---
+import os
+
+os.environ["OPENAI_API_KEY"] = "sk-proj-REDACTED"
+--- CELL 41 ---
+# ============================================================
+# MODELO DE LENGUAJE
+# ============================================================
+
+llm = ChatOpenAI(
+    model="gpt-4.1-mini",
+    temperature=0
+)
+
+print("Modelo cargado correctamente.")
+--- CELL 42 ---
+# ============================================================
+# PROMPT PARA GENERAR SQL
+# ============================================================
+
+prompt_sql = PromptTemplate(
+    input_variables=["esquema_bd", "pregunta_usuario"],
+    template="""
+Eres un experto en SQL para SQLite.
+
+Tu tarea es convertir la pregunta del usuario en una consulta SQL válida
+para SQLite, usando exclusivamente el esquema proporcionado.
+
+Reglas obligatorias:
+1. Usa solo tablas y columnas existentes en el esquema.
+2. No inventes nombres de tablas ni campos.
+3. Genera únicamente una consulta SQL.
+4. No incluyas explicaciones.
+5. No uses markdown.
+6. Si la pregunta requiere texto, usa LIKE cuando sea apropiado.
+7. Si se necesita unir tablas, usa JOIN correctamente.
+8. Limita a 100 filas como máximo cuando aplique.
+9. Nunca uses DROP, DELETE, UPDATE, INSERT o ALTER.
+10. Solo genera consultas SELECT.
+11. Respeta exactamente los valores categóricos del esquema, incluyendo mayúsculas, tildes y género cuando estén definidos.
+
+Esquema:
+{esquema_bd}
+
+Pregunta del usuario:
+{pregunta_usuario}
+
+SQL:
+"""
+)
+
+print("Prompt de generación SQL listo.")
+--- CELL 43 ---
+# ============================================================
+# CADENA PARA GENERAR SQL
+# ============================================================
+
+cadena_sql = prompt_sql | llm | StrOutputParser()
+
+print("Cadena SQL creada correctamente.")
+--- CELL 44 ---
+# ============================================================
+# FUNCIÓN: GENERAR SQL DESDE LENGUAJE NATURAL
+# ============================================================
+
+def generar_sql(pregunta_usuario: str) -> str:
+    """
+    Recibe una pregunta en lenguaje natural y devuelve
+    una consulta SQL generada por el modelo.
+    """
+    sql_generado = cadena_sql.invoke({
+        "esquema_bd": esquema_bd,
+        "pregunta_usuario": pregunta_usuario
+    })
+    return sql_generado.strip()
+--- CELL 45 ---
+# Prueba de consulta del chat al sql
+pregunta_prueba = "¿clientes de bogota?"
+sql_prueba = generar_sql(pregunta_prueba)
+
+print("Pregunta:", pregunta_prueba)
+print("\nSQL generado:\n")
+print(sql_prueba)
+--- CELL 46 ---
+# ============================================================
+# FUNCIÓN: EJECUTAR SQL
+# ============================================================
+
+def ejecutar_sql_seguro(sql_query: str) -> pd.DataFrame:
+    """
+    Ejecuta una consulta SQL SELECT sobre la base de datos
+    y devuelve el resultado como DataFrame.
+    """
+    sql_limpio = sql_query.strip().lower()
+
+    if not sql_limpio.startswith("select"):
+        raise ValueError("Solo se permiten consultas SELECT.")
+
+    bloqueadas = ["drop ", "delete ", "update ", "insert ", "alter "]
+    if any(palabra in sql_limpio for palabra in bloqueadas):
+        raise ValueError("La consulta contiene instrucciones no permitidas.")
+
+    return pd.read_sql_query(sql_query, conn)
+--- CELL 47 ---
+# ============================================================
+# PRUEBA INTERACTIVA: PREGUNTA LIBRE DEL USUARIO
+# ============================================================
+
+pregunta_usuario = input("Escribe tu pregunta sobre la base de datos bancaria: ")
+
+try:
+    # 1. Generar SQL
+    sql_generado = generar_sql(pregunta_usuario)
+
+    print("\n" + "="*70)
+    print("PREGUNTA DEL USUARIO:")
+    print(pregunta_usuario)
+
+    print("\n" + "="*70)
+    print("SQL GENERADO:")
+    print(sql_generado)
+
+    # 2. Ejecutar SQL
+    resultado = ejecutar_sql_seguro(sql_generado)
+
+    print("\n" + "="*70)
+    print("RESULTADO:")
+    display(resultado)
+
+    # 3. Mensaje simple de interpretación
+    print("\n" + "="*70)
+    if resultado.empty:
+        print("No se encontraron registros para la consulta realizada.")
+    else:
+        print(f"Consulta ejecutada correctamente. Se encontraron {len(resultado)} registro(s).")
+
+except Exception as e:
+    print("\n" + "="*70)
+    print("Ocurrió un error durante la prueba:")
+    print(str(e))
+--- CELL 48 ---
+# ============================================================
+# PROMPT PARA RESPUESTA EN LENGUAJE NATURAL
+# ============================================================
+
+prompt_respuesta = PromptTemplate(
+    input_variables=["pregunta_usuario", "sql_generado", "resultado_tabular"],
+    template="""
+Eres un asistente de datos bancarios.
+
+Tu tarea es responder la pregunta del usuario de forma clara, breve y profesional,
+basándote únicamente en el resultado tabular obtenido desde la base de datos.
+
+Reglas:
+1. No inventes información.
+2. Resume con claridad lo encontrado.
+3. Si no hay resultados, indícalo de forma explícita.
+4. No menciones datos que no estén en la tabla.
+5. Usa español claro.
+6. Puedes enumerar hallazgos cuando sea útil.
+
+Pregunta del usuario:
+{pregunta_usuario}
+
+SQL ejecutado:
+{sql_generado}
+
+Resultado tabular:
+{resultado_tabular}
+
+Respuesta:
+"""
+)
+
+cadena_respuesta = prompt_respuesta | llm | StrOutputParser()
+
+print("Cadena de respuesta lista.")
+--- CELL 49 ---
+# ============================================================
+# FUNCIÓN: RESPUESTA FINAL AL USUARIO
+# ============================================================
+
+def generar_respuesta_natural(pregunta_usuario: str, sql_generado: str, resultado_df: pd.DataFrame) -> str:
+    """
+    Genera una respuesta en lenguaje natural a partir de la pregunta,
+    el SQL generado y el resultado tabular.
+    """
+    resultado_tabular = resultado_df.to_string(index=False)
+
+    respuesta = cadena_respuesta.invoke({
+        "pregunta_usuario": pregunta_usuario,
+        "sql_generado": sql_generado,
+        "resultado_tabular": resultado_tabular
+    })
+
+    return respuesta.strip()
+--- CELL 50 ---
+def ejecutar_sql_seguro(sql_query: str) -> pd.DataFrame:
+    """
+    Ejecuta una consulta SQL SELECT sobre la base de datos
+    y devuelve el resultado como DataFrame.
+    """
+    sql_limpio = sql_query.strip().lower()
+
+    if not sql_limpio.startswith("select"):
+        raise ValueError("Solo se permiten consultas SELECT.")
+
+    bloqueadas = ["drop ", "delete ", "update ", "insert ", "alter "]
+    if any(palabra in sql_limpio for palabra in bloqueadas):
+        raise ValueError("La consulta contiene instrucciones no permitidas.")
+
+    return pd.read_sql_query(sql_query, conn)
+--- CELL 51 ---
+resultado_prueba = ejecutar_sql_seguro(sql_prueba)
+display(resultado_prueba)
+--- CELL 52 ---
+#  Probar respuesta
+respuesta_prueba = generar_respuesta_natural(
+    pregunta_usuario=pregunta_prueba,
+    sql_generado=sql_prueba,
+    resultado_df=resultado_prueba
+)
+
+print(respuesta_prueba)
+--- CELL 53 ---
+# ============================================================
+# ORQUESTAR EL FLUJO COMPLETO DEL CHAT
+# FUNCIÓN PRINCIPAL DEL CHAT
+# ============================================================
+
+def consultar_bd_por_chat(pregunta_usuario: str):
+    """
+    Orquesta todo el flujo:
+    1. genera SQL
+    2. ejecuta SQL
+    3. genera respuesta natural
+    4. devuelve todo el paquete
+    """
+    try:
+        sql_generado = generar_sql(pregunta_usuario)
+        resultado_df = ejecutar_sql_seguro(sql_generado)
+        respuesta = generar_respuesta_natural(pregunta_usuario, sql_generado, resultado_df)
+
+        return {
+            "pregunta": pregunta_usuario,
+            "sql": sql_generado,
+            "resultado": resultado_df,
+            "respuesta": respuesta
+        }
+    except Exception as e:
+        return {
+            "pregunta": pregunta_usuario,
+            "sql": None,
+            "resultado": None,
+            "respuesta": f"Ocurrió un error durante la consulta: {str(e)}"
+        }
+--- CELL 54 ---
+#  Probar flujo completo del chat
+
+consulta = consultar_bd_por_chat("¿Qué clientes viven en Bogotá?")
+
+print("PREGUNTA:")
+print(consulta["pregunta"])
+
+print("\nSQL GENERADO:")
+print(consulta["sql"])
+
+print("\nRESPUESTA:")
+print(consulta["respuesta"])
+
+print("\nTABLA RESULTANTE:")
+consulta["resultado"]
+--- CELL 55 ---
+#  Otra prueba
+consulta_1 = consultar_bd_por_chat("¿Cuál es el saldo total por ciudad?")
+print(consulta_1["respuesta"])
+consulta_1["resultado"]
+--- CELL 56 ---
+consulta_2 = consultar_bd_por_chat("Muéstrame las cuentas activas de los clientes")
+print(consulta_2["respuesta"])
+consulta_2["resultado"]
+--- CELL 57 ---
+consulta_3 = consultar_bd_por_chat("¿Qué movimientos tiene Ana Gómez?")
+print(consulta_3["respuesta"])
+consulta_3["resultado"]
+--- CELL 58 ---
+consulta_4 = consultar_bd_por_chat("¿Cuántas cuentas de ahorros hay?")
+print(consulta_4["respuesta"])
+consulta_4["resultado"]
+--- CELL 59 ---
+# ============================================================
+# CHAT BÁSICO EN CONSOLA
+# ============================================================
+
+def chat_banco():
+    print("Bienvenido a DataDialogue AI - Consulta bancaria")
+    print("Escribe 'salir' para terminar.\n")
+
+    while True:
+        pregunta = input("Tú: ")
+
+        if pregunta.lower().strip() == "salir":
+            print("Asistente: Hasta luego.")
+            break
+
+        respuesta = consultar_bd_por_chat(pregunta)
+
+        print("\nAsistente:")
+        print(respuesta["respuesta"])
+
+        print("\nSQL generado:")
+        print(respuesta["sql"])
+
+        print("\nResultado tabular:")
+        display(respuesta["resultado"])
+        print("-" * 80)
+--- CELL 60 ---
+# Ejecuta esta celda para conversar con la base de datos
+chat_banco()
+--- CELL 61 ---
+# ============================================================
+# TRAZABILIDAD DEL PROCESO
+# ============================================================
+
+from IPython.display import display
+
+pregunta_demo = "¿Qué clientes tienen cuentas corrientes?"
+
+salida_demo = consultar_bd_por_chat(pregunta_demo)
+
+print("1. Pregunta original:")
+print(salida_demo.get("pregunta"))
+
+print("\n2. SQL generado:")
+print(salida_demo.get("sql"))
+
+print("\n3. Respuesta natural:")
+print(salida_demo.get("respuesta"))
+
+print("\n4. Resultado estructurado:")
+if salida_demo.get("resultado") is not None:
+    display(salida_demo["resultado"])
+else:
+    print("No hay resultado tabular disponible.")
+--- CELL 65 ---
+# ============================================================
+# INSTALACIÓN DE DEPENDENCIAS CORREGIDA
+# ============================================================
+
+!pip install -q -U click>=8.2.1
+!pip install -q -U openai-whisper
+!pip install -q -U gTTS
+!apt-get -qq update
+!apt-get -qq install -y ffmpeg
+
+# Verificación rápida
+import click
+print("Click version:", click.__version__)
+--- CELL 66 ---
+# ============================================================
+# IMPORTACIÓN DE LIBRERÍAS
+# ============================================================
+
+import os
+import whisper
+import pandas as pd
+
+from IPython.display import Audio, display
+from google.colab import files
+from gtts import gTTS
+--- CELL 67 ---
+# ============================================================
+# VALIDACIÓN DE DEPENDENCIAS PREVIAS
+# ============================================================
+
+print("consultar_bd_por_chat existe:", "consultar_bd_por_chat" in globals())
+print("conn existe:", "conn" in globals())
+--- CELL 68 ---
+# ============================================================
+# CARGAR MODELO WHISPER
+# ============================================================
+
+modelo_whisper = whisper.load_model("base")
+print("Modelo Whisper cargado correctamente.")
+--- CELL 69 ---
+# ============================================================
+# GENERAR AUDIO DE PRUEBA
+# ============================================================
+
+from gtts import gTTS
+from IPython.display import Audio, display
+
+texto_prueba = "¿Qué clientes viven en Bogotá y cuáles tienen cuentas activas?"
+
+archivo_audio = "pregunta_banco.mp3"
+
+tts = gTTS(text=texto_prueba, lang="es")
+tts.save(archivo_audio)
+
+print("Audio generado correctamente:", archivo_audio)
+
+# Reproducir audio
+display(Audio(archivo_audio))
+--- CELL 70 ---
+def transcribir_audio(ruta_audio: str) -> str:
+    resultado = modelo_whisper.transcribe(ruta_audio, language="es")
+    return resultado["text"].strip()
+--- CELL 71 ---
+# ============================================================
+# TRANSCRIPCIÓN DEL AUDIO GENERADO
+# ============================================================
+
+texto_transcrito = transcribir_audio(archivo_audio)
+
+print("Texto transcrito:")
+print(texto_transcrito)
+--- CELL 72 ---
+# ============================================================
+# CONSULTAR LA BD A PARTIR DEL TEXTO TRANSCRITO
+# ============================================================
+
+salida_voz = consultar_bd_por_chat(texto_transcrito)
+
+print("1. Texto transcrito:")
+print(salida_voz["pregunta"])
+
+print("\n2. SQL generado:")
+print(salida_voz["sql"])
+
+print("\n3. Respuesta natural:")
+print(salida_voz["respuesta"])
+
+print("\n4. Resultado tabular:")
+display(salida_voz["resultado"])
+--- CELL 73 ---
+# ============================================================
+# CONVERTIR LA RESPUESTA A AUDIO
+# ============================================================
+
+from gtts import gTTS
+from IPython.display import Audio, display
+
+texto_respuesta = salida_voz["respuesta"]
+archivo_respuesta = "respuesta_banco.mp3"
+
+tts = gTTS(text=texto_respuesta, lang="es")
+tts.save(archivo_respuesta)
+
+print("Audio de respuesta generado:", archivo_respuesta)
+--- CELL 74 ---
+# ============================================================
+# REPRODUCIR RESPUESTA EN AUDIO
+# ============================================================
+
+display(Audio(archivo_respuesta))
+--- CELL 78 ---
+

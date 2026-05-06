@@ -8,9 +8,15 @@ app.use(express.json());
 
 
 // Import and use routes
-app.use('/api/clientes', require('./routes/clientes'));
-app.use('/api/cuentas', require('./routes/cuentas'));
-app.use('/api/movimientos', require('./routes/movimientos'));
+const clientesRoutes = require('./routes/clientes');
+const cuentasRoutes = require('./routes/cuentas');
+const movimientosRoutes = require('./routes/movimientos');
+const chatRoutes = require('./routes/chat');
+
+app.use('/api/clientes', clientesRoutes);
+app.use('/api/cuentas', cuentasRoutes);
+app.use('/api/movimientos', movimientosRoutes);
+app.use('/api/chat', chatRoutes);
 app.use('/api/catalogos', require('./routes/catalogos'));
 
 // === FUSIÓN DE FRONTEND PARA ENTREGA ÚNICA ===
