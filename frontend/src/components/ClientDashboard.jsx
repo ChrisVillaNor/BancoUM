@@ -165,10 +165,8 @@ export default function ClientDashboard({ userData, onLogout }) {
     }
   };
   const handleDeleteUserAccount = async () => {
-    if (!profileForm.currentPassword) {
-      setProfileStatus({ state: 'error', msg: 'Para eliminar la cuenta, primero ingresa tu contraseña de seguridad y luego haz clic en el botón.' });
-      return;
-    }
+    const pwd = window.prompt('Para eliminar la cuenta, primero ingresa tu contraseña de seguridad:');
+    if (!pwd) return;
     
     if (!window.confirm('🚨 ¡ATENCIÓN! 🚨\n\nEstás a punto de eliminar tu cuenta de forma DEFINITIVA. Se borrarán todas tus cuentas, movimientos, bolsillos y datos personales.\n\nEsta acción NO se puede deshacer.\n\n¿Estás absolutamente seguro de que deseas continuar?')) {
       return;
@@ -179,7 +177,7 @@ export default function ClientDashboard({ userData, onLogout }) {
       const resp = await fetch(`/api/clientes/${userData.id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword: profileForm.currentPassword })
+        body: JSON.stringify({ currentPassword: pwd })
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || 'Error al eliminar cuenta.');
@@ -598,11 +596,6 @@ export default function ClientDashboard({ userData, onLogout }) {
                               {profileStatus.state === 'loading' ? 'Guardando...' : 'Guardar Cambios'}
                            </button>
                         </div>
-                        <div style={{ marginTop: '1.5rem', textAlign: 'center', borderTop: '1px solid #fee2e2', paddingTop: '1.5rem' }}>
-                           <button type="button" onClick={handleDeleteUserAccount} disabled={profileStatus.state === 'loading'} style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold' }}>
-                              <Trash2 size={18} /> Eliminar mi cuenta permanentemente
-                           </button>
-                        </div>
                      </form>
                   ) : (
                      <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: '1fr 1fr' }}>
@@ -639,6 +632,11 @@ export default function ClientDashboard({ userData, onLogout }) {
                         <div style={{ gridColumn: 'span 2', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #f3f4f6' }}>
                            <div style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: '600', marginBottom: '0.3rem' }}>ESTADO DE CUENTA</div>
                            <div style={{ fontSize: '1.1rem', color: 'var(--success)', fontWeight: 'bold' }}>ACTIVO Y VERIFICADO</div>
+                        </div>
+                        <div style={{ gridColumn: 'span 2', marginTop: '1.5rem', textAlign: 'center', borderTop: '1px solid #fee2e2', paddingTop: '1.5rem' }}>
+                           <button type="button" onClick={handleDeleteUserAccount} disabled={profileStatus.state === 'loading'} style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold' }}>
+                              <Trash2 size={18} /> Eliminar mi cuenta permanentemente
+                           </button>
                         </div>
                      </div>
                   )}
