@@ -20,7 +20,7 @@ export default function ChatNL2SQL({ userData }) {
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       setMessages([
-        { id: 'welcome', role: 'bot', text: 'Hola. Soy Molleja AI, tu inteligencia artificial financiera. Estoy aquí para ayudarte a consultar tus cuentas y servicios. ¿En qué te puedo ayudar hoy?' }
+        { id: 'welcome', role: 'bot', text: 'Hola. Soy Molleja IA, tu inteligencia artificial financiera. Estoy aquí para ayudarte a consultar tus cuentas y servicios. ¿En qué te puedo ayudar hoy?' }
       ]);
     }
   }, [isOpen, messages.length]);
@@ -118,7 +118,7 @@ export default function ChatNL2SQL({ userData }) {
             <Bot size={24} color="white" />
           </div>
           <div className="chat-header-info">
-            <h3>Molleja AI</h3>
+            <h3>Molleja IA</h3>
             <p>Inteligencia Artificial Bancaria</p>
           </div>
           <button onClick={() => setIsOpen(false)} className="chat-header-close">

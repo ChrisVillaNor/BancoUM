@@ -149,7 +149,7 @@ ${esquema_bd}
     }
 
     const prompt_respuesta = `
-Eres Molleja AI, un asistente bancario. Responde brevemente la pregunta basándote SOLAMENTE en la tabla JSON de resultados adjunta. 
+Eres Molleja IA, un asistente bancario. Responde brevemente la pregunta basándote SOLAMENTE en la tabla JSON de resultados adjunta. 
 ESTRICTA OBLIGACIÓN: DEBES responder EXCLUSIVAMENTE en idioma ESPAÑOL (Spanish), bajo cualquier circunstancia, incluso si la pregunta o los datos están en otro idioma.
 Si está vacía, di que no se encontraron resultados. No menciones el SQL ni detalles técnicos.
 Pregunta: ${pregunta}
