@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, UserPlus, CheckCircle } from 'lucide-react';
+import { ArrowLeft, UserPlus, CheckCircle, Mail } from 'lucide-react';
 
 export default function Register({ onBack, onSuccess, onGoLogin }) {
   const [formData, setFormData] = useState({
@@ -17,22 +17,57 @@ export default function Register({ onBack, onSuccess, onGoLogin }) {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [success, setSuccess] = useState(false);
+  const [step, setStep] = useState(1);
+  const [otp, setOtp] = useState('');
 
   const handleChange = (e) => {
     setFormData({...formData, [e.target.name]: e.target.value});
   };
 
-  const handleSubmit = async (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg('');
 
     try {
-      // Usamos el endpoint real para intentar insertar en la DB Neon
+      const response = await fetch('/api/clientes/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, nombre: formData.nombre })
+      });
+      
+      if (!response.ok) {
+        let msg = 'Error enviando código';
+        try {
+          const data = await response.json();
+          msg = data.error || msg;
+        } catch(e) {}
+        throw new Error(msg);
+      }
+      
+      setStep(2);
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyAndRegister = async (e) => {
+    e.preventDefault();
+    if (!otp || otp.length !== 6) {
+        setErrorMsg('Por favor ingresa el código de 6 dígitos.');
+        return;
+    }
+    setLoading(true);
+    setErrorMsg('');
+
+    try {
+      // Usamos el endpoint real para intentar insertar en la DB Neon (pasando el OTP)
       const response = await fetch('/api/clientes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({ ...formData, otp })
       });
       
       if (!response.ok) {
@@ -65,8 +100,45 @@ export default function Register({ onBack, onSuccess, onGoLogin }) {
            <CheckCircle size={60} className="icon-gold" style={{margin:'0 auto 2rem'}}/>
            <h2>¡Bienvenido al Ecosistema UM!</h2>
            <p style={{marginTop: '1rem', color: 'var(--text-muted)'}}>
-             Tu cuenta ha sido creada exitosamente. Redirigiendo a la pantalla de acceso...
+             Tu cuenta ha sido verificada y creada exitosamente. Redirigiendo a la pantalla de acceso...
            </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 2) {
+    return (
+      <div className="auth-wrapper">
+        <div className="auth-card register-card text-center">
+          <button className="auth-back-btn" onClick={() => setStep(1)} style={{ marginBottom: '20px' }}>
+            <ArrowLeft size={20} /> Volver al formulario
+          </button>
+          
+          <div className="auth-icon-gold" style={{margin:'0 auto 1.5rem'}}>
+             <Mail size={32} />
+          </div>
+          <h2>Verifica tu Correo</h2>
+          <p>Hemos enviado un código de 6 dígitos a <strong>{formData.email}</strong>. Por favor, ingrésalo abajo para finalizar tu registro.</p>
+          
+          {errorMsg && <div className="auth-alert">{errorMsg}</div>}
+
+          <form onSubmit={handleVerifyAndRegister} className="auth-form" style={{ marginTop: '20px' }}>
+            <div className="form-group-gold">
+              <input 
+                type="text" 
+                maxLength="6"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                placeholder="Ej. 123456" 
+                required 
+                style={{ textAlign: 'center', fontSize: '24px', letterSpacing: '5px' }}
+              />
+            </div>
+            <button type="submit" className="btn-brand-gold width-100" style={{justifyContent: 'center', marginTop: '1rem'}} disabled={loading}>
+              {loading ? 'Verificando...' : 'Crear Cuenta Definitiva'}
+            </button>
+          </form>
         </div>
       </div>
     );
@@ -89,7 +161,7 @@ export default function Register({ onBack, onSuccess, onGoLogin }) {
 
         {errorMsg && <div className="auth-alert">{errorMsg}</div>}
 
-        <form onSubmit={handleSubmit} className="auth-form two-cols">
+        <form onSubmit={handleSendOtp} className="auth-form two-cols">
           <div className="form-group-gold">
             <label>Nombres</label>
             <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} required />
@@ -137,7 +209,7 @@ export default function Register({ onBack, onSuccess, onGoLogin }) {
           </div>
 
           <button type="submit" className="btn-brand-gold col-span-2" style={{justifyContent: 'center', marginTop: '1rem'}} disabled={loading}>
-            {loading ? 'Procesando en Bóveda...' : 'Comenzar a Construir Futuro'}
+            {loading ? 'Enviando código...' : 'Continuar al paso final'}
           </button>
         </form>
 

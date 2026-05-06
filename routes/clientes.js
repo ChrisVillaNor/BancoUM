@@ -1,6 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const { pool } = require('../db');
+const nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER || 'tucorreo@gmail.com',
+        pass: process.env.EMAIL_PASS || 'tu_password_de_aplicacion'
+    }
+});
+
+// Almacenamiento temporal en memoria para los códigos OTP
+const otpStore = new Map();
 
 // Obtener todos los clientes (lista)
 router.get('/', async (req, res) => {
@@ -63,20 +75,61 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Crear un nuevo cliente
+// Enviar código OTP de verificación
+router.post('/send-otp', async (req, res) => {
+    const { email, nombre } = req.body;
+    
+    // Generar código de 6 dígitos
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Guardar en memoria por 10 minutos
+    otpStore.set(email, { code, expires: Date.now() + 10 * 60 * 1000 });
+
+    const mailOptions = {
+        from: '"BancoUM Seguridad" <no-reply@bancoum.edu>',
+        to: email,
+        subject: 'Código de Verificación - BancoUM',
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #d4af37; text-align: center;">Verificación de Correo, ${nombre}</h2>
+                <p>Estás a un paso de crear tu cuenta en BancoUM. Ingresa el siguiente código de 6 dígitos en la aplicación:</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <span style="padding: 15px 30px; background-color: #f8f9fa; border: 2px dashed #d4af37; color: #333; font-size: 24px; font-weight: bold; letter-spacing: 5px;">${code}</span>
+                </div>
+                <p style="color: #555; font-size: 12px; text-align: center;">El código expirará en 10 minutos.</p>
+            </div>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        res.status(200).json({ message: 'Código enviado exitosamente.' });
+    } catch(err) {
+        console.error("Error enviando OTP:", err.message);
+        res.status(500).json({ error: 'Error al enviar el correo. Verifica tus credenciales de Gmail.' });
+    }
+});
+
+// Crear un nuevo cliente (requiere OTP)
 router.post('/', async (req, res) => {
   const { 
-    tipo_documento, 
-    numero_documento, 
-    nombre, 
-    apellido, 
-    fecha_nacimiento, 
-    telefono, 
-    email, 
-    direccion, 
-    comuna,
-    contrasena
+    tipo_documento, numero_documento, nombre, apellido, 
+    fecha_nacimiento, telefono, email, direccion, comuna,
+    contrasena, otp
   } = req.body;
+
+  // Verificar OTP
+  const storedOtp = otpStore.get(email);
+  if (!storedOtp) {
+      return res.status(400).json({ error: 'Debes solicitar un código de verificación primero.' });
+  }
+  if (Date.now() > storedOtp.expires) {
+      otpStore.delete(email);
+      return res.status(400).json({ error: 'El código ha expirado. Solicita uno nuevo.' });
+  }
+  if (storedOtp.code !== otp) {
+      return res.status(400).json({ error: 'El código de verificación es incorrecto.' });
+  }
 
   try {
     const query = `
@@ -93,17 +146,20 @@ router.post('/', async (req, res) => {
     ];
     
     const result = await pool.query(query, values);
+    otpStore.delete(email); // Limpiar OTP usado
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error al crear cliente:', err);
     res.status(500).json({ error: 'Error al registrar el cliente, revisa que no haya datos duplicados.' });
   }
 });
+
 // Iniciar sesión (Login de Cliente) usando Correo y Contrasena
 router.post('/login', async (req, res) => {
   const { email, contrasena } = req.body;
   try {
-    const query = 'SELECT id, nombre, apellido, email, numero_documento FROM cliente WHERE email = $1 AND (contrasena = $2 OR numero_documento = $2) AND activo = true';
+    // ESTRICTO: Solo permite el ingreso usando la contraseña solicitada.
+    const query = 'SELECT id, nombre, apellido, email, numero_documento FROM cliente WHERE email = $1 AND contrasena = $2 AND activo = true';
     const result = await pool.query(query, [email, contrasena]);
     if (result.rows.length === 0) {
       return res.status(401).json({ error: 'Credenciales inválidas. Verifique su correo o su contraseña.' });
