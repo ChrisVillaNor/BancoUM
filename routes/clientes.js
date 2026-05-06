@@ -110,6 +110,36 @@ router.post('/send-otp', async (req, res) => {
   }
 });
 
+// Crear un nuevo cliente directamente (Modo Administrador, sin OTP)
+router.post('/admin', async (req, res) => {
+  const {
+    tipo_documento, numero_documento, nombre, apellido,
+    fecha_nacimiento, telefono, email, direccion, comuna
+  } = req.body;
+
+  try {
+    const query = `
+      INSERT INTO cliente (
+        tipo_documento, numero_documento, nombre, apellido, 
+        fecha_nacimiento, telefono, email, direccion, comuna, contrasena, activo
+      ) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true)
+      RETURNING *;
+    `;
+    const defaultPassword = numero_documento; // Contraseña por defecto para cuentas creadas por admin
+    const values = [
+      tipo_documento, numero_documento, nombre, apellido,
+      fecha_nacimiento || null, telefono, email, direccion, comuna || null, defaultPassword
+    ];
+
+    const result = await pool.query(query, values);
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Error al crear cliente por admin:', err);
+    res.status(500).json({ error: 'Error al registrar el cliente, revisa que no haya datos duplicados.' });
+  }
+});
+
 // Crear un nuevo cliente (requiere OTP)
 router.post('/', async (req, res) => {
   const {
