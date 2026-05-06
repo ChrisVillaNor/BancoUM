@@ -4,11 +4,11 @@ const { pool } = require('../db');
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER || 'tucorreo@gmail.com',
-        pass: process.env.EMAIL_PASS || 'tu_password_de_aplicacion'
-    }
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER || 'tucorreo@gmail.com',
+    pass: process.env.EMAIL_PASS || 'tu_password_de_aplicacion'
+  }
 });
 
 // Almacenamiento temporal en memoria para los códigos OTP
@@ -49,10 +49,10 @@ router.put('/:id', async (req, res) => {
     const checkQuery = 'SELECT * FROM cliente WHERE id = $1';
     const checkResult = await pool.query(checkQuery, [id]);
     if (checkResult.rows.length === 0) return res.status(404).json({ error: 'Cliente no encontrado' });
-    
+
     const client = checkResult.rows[0];
     const validPassword = (client.contrasena === currentPassword) || (client.numero_documento === currentPassword);
-    
+
     if (!validPassword) {
       return res.status(403).json({ error: 'Contraseña incorrecta. Edición denegada.' });
     }
@@ -77,19 +77,19 @@ router.put('/:id', async (req, res) => {
 
 // Enviar código OTP de verificación
 router.post('/send-otp', async (req, res) => {
-    const { email, nombre } = req.body;
-    
-    // Generar código de 6 dígitos
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    // Guardar en memoria por 10 minutos
-    otpStore.set(email, { code, expires: Date.now() + 10 * 60 * 1000 });
+  const { email, nombre } = req.body;
 
-    const mailOptions = {
-        from: '"BancoUM Seguridad" <no-reply@bancoum.edu>',
-        to: email,
-        subject: 'Código de Verificación - BancoUM',
-        html: `
+  // Generar código de 6 dígitos
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+  // Guardar en memoria por 10 minutos
+  otpStore.set(email, { code, expires: Date.now() + 10 * 60 * 1000 });
+
+  const mailOptions = {
+    from: '"BancoUM Seguridad" <no-reply@bancoum.edu>',
+    to: email,
+    subject: 'Código de Verificación - BancoUM',
+    html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
                 <h2 style="color: #d4af37; text-align: center;">Verificación de Correo, ${nombre}</h2>
                 <p>Estás a un paso de crear tu cuenta en BancoUM. Ingresa el siguiente código de 6 dígitos en la aplicación:</p>
@@ -99,21 +99,21 @@ router.post('/send-otp', async (req, res) => {
                 <p style="color: #555; font-size: 12px; text-align: center;">El código expirará en 10 minutos.</p>
             </div>
         `
-    };
+  };
 
-    try {
-        await transporter.sendMail(mailOptions);
-        res.status(200).json({ message: 'Código enviado exitosamente.' });
-    } catch(err) {
-        console.error("Error enviando OTP:", err.message);
-        res.status(500).json({ error: 'Error al enviar el correo. Verifica tus credenciales de Gmail.' });
-    }
+  try {
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ message: 'Código enviado exitosamente.' });
+  } catch (err) {
+    console.error("Error enviando OTP:", err.message);
+    res.status(500).json({ error: 'Error al enviar el correo. Verifica tus credenciales de Gmail.' });
+  }
 });
 
 // Crear un nuevo cliente (requiere OTP)
 router.post('/', async (req, res) => {
-  const { 
-    tipo_documento, numero_documento, nombre, apellido, 
+  const {
+    tipo_documento, numero_documento, nombre, apellido,
     fecha_nacimiento, telefono, email, direccion, comuna,
     contrasena, otp
   } = req.body;
@@ -121,14 +121,14 @@ router.post('/', async (req, res) => {
   // Verificar OTP
   const storedOtp = otpStore.get(email);
   if (!storedOtp) {
-      return res.status(400).json({ error: 'Debes solicitar un código de verificación primero.' });
+    return res.status(400).json({ error: 'Debes solicitar un código de verificación primero.' });
   }
   if (Date.now() > storedOtp.expires) {
-      otpStore.delete(email);
-      return res.status(400).json({ error: 'El código ha expirado. Solicita uno nuevo.' });
+    otpStore.delete(email);
+    return res.status(400).json({ error: 'El código ha expirado. Solicita uno nuevo.' });
   }
   if (storedOtp.code !== otp) {
-      return res.status(400).json({ error: 'El código de verificación es incorrecto.' });
+    return res.status(400).json({ error: 'El código de verificación es incorrecto.' });
   }
 
   try {
@@ -141,10 +141,10 @@ router.post('/', async (req, res) => {
       RETURNING *;
     `;
     const values = [
-      tipo_documento, numero_documento, nombre, apellido, 
+      tipo_documento, numero_documento, nombre, apellido,
       fecha_nacimiento, telefono, email, direccion, comuna || null, contrasena
     ];
-    
+
     const result = await pool.query(query, values);
     otpStore.delete(email); // Limpiar OTP usado
     res.status(201).json(result.rows[0]);
