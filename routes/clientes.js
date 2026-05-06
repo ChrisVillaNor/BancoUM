@@ -181,4 +181,63 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Eliminar cuenta permanentemente
+router.delete('/:id', async (req, res) => {
+  const id = req.params.id;
+  const { currentPassword } = req.body;
+  const client = await pool.connect();
+  
+  try {
+    // 1. Verificar contraseña
+    const checkQuery = 'SELECT contrasena FROM cliente WHERE id = $1';
+    const checkResult = await client.query(checkQuery, [id]);
+    if (checkResult.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'Cliente no encontrado' });
+    }
+    if (checkResult.rows[0].contrasena !== currentPassword) {
+      client.release();
+      return res.status(403).json({ error: 'Contraseña incorrecta. Acción denegada.' });
+    }
+
+    // Iniciar transacción de borrado en cascada manual
+    await client.query('BEGIN');
+
+    // Obtener IDs de las cuentas del usuario
+    const cuentasResult = await client.query('SELECT id FROM cuenta WHERE usuario_id = $1', [id]);
+    const cuentaIds = cuentasResult.rows.map(row => row.id);
+
+    if (cuentaIds.length > 0) {
+      // Borrar movimientos
+      await client.query(`DELETE FROM movimiento WHERE cuenta_origen_id = ANY($1::int[]) OR cuenta_destino_id = ANY($1::int[])`, [cuentaIds]);
+      // Borrar pagos de credito
+      await client.query(`DELETE FROM pago_credito WHERE cuenta_id = ANY($1::int[])`, [cuentaIds]);
+      // Borrar bolsillos
+      await client.query(`DELETE FROM bolsillo WHERE cuenta_id = ANY($1::int[])`, [cuentaIds]);
+      // Borrar tarjetas
+      await client.query(`DELETE FROM tarjeta WHERE cuenta_id = ANY($1::int[])`, [cuentaIds]);
+      // Borrar créditos
+      await client.query(`DELETE FROM credito WHERE cuenta_id = ANY($1::int[])`, [cuentaIds]);
+    }
+
+    // Borrar notificaciones
+    await client.query('DELETE FROM notificacion WHERE usuario_id = $1', [id]);
+    // Borrar solicitudes
+    await client.query('DELETE FROM producto_solicitud WHERE usuario_id = $1', [id]);
+    // Borrar cuentas
+    await client.query('DELETE FROM cuenta WHERE usuario_id = $1', [id]);
+    // Finalmente, borrar al cliente
+    await client.query('DELETE FROM cliente WHERE id = $1', [id]);
+
+    await client.query('COMMIT');
+    client.release();
+    res.json({ message: 'Cuenta eliminada exitosamente' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    client.release();
+    console.error('Error al eliminar cuenta:', err);
+    res.status(500).json({ error: 'Error interno al intentar eliminar la cuenta.' });
+  }
+});
+
 module.exports = router;
