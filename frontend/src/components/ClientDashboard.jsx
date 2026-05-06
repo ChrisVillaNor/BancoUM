@@ -28,6 +28,8 @@ export default function ClientDashboard({ userData, onLogout }) {
     currentPassword: ''
   });
   const [profileStatus, setProfileStatus] = useState({ state: 'idle', msg: '' });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
 
   const loadCuentas = async () => {
     try {
@@ -164,9 +166,12 @@ export default function ClientDashboard({ userData, onLogout }) {
       setTimeout(() => setProfileStatus({ state: 'idle', msg: '' }), 5000);
     }
   };
-  const handleDeleteUserAccount = async () => {
-    const pwd = window.prompt('Para eliminar la cuenta, primero ingresa tu contraseña de seguridad:');
-    if (!pwd) return;
+  const handleDeleteUserAccount = async (e) => {
+    e.preventDefault();
+    if (!deletePassword) {
+      setProfileStatus({ state: 'error', msg: 'Para eliminar la cuenta, primero ingresa tu contraseña.' });
+      return;
+    }
     
     if (!window.confirm('🚨 ¡ATENCIÓN! 🚨\n\nEstás a punto de eliminar tu cuenta de forma DEFINITIVA. Se borrarán todas tus cuentas, movimientos, bolsillos y datos personales.\n\nEsta acción NO se puede deshacer.\n\n¿Estás absolutamente seguro de que deseas continuar?')) {
       return;
@@ -177,7 +182,7 @@ export default function ClientDashboard({ userData, onLogout }) {
       const resp = await fetch(`/api/clientes/${userData.id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword: pwd })
+        body: JSON.stringify({ currentPassword: deletePassword })
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || 'Error al eliminar cuenta.');
@@ -634,9 +639,31 @@ export default function ClientDashboard({ userData, onLogout }) {
                            <div style={{ fontSize: '1.1rem', color: 'var(--success)', fontWeight: 'bold' }}>ACTIVO Y VERIFICADO</div>
                         </div>
                         <div style={{ gridColumn: 'span 2', marginTop: '1.5rem', textAlign: 'center', borderTop: '1px solid #fee2e2', paddingTop: '1.5rem' }}>
-                           <button type="button" onClick={handleDeleteUserAccount} disabled={profileStatus.state === 'loading'} style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold' }}>
-                              <Trash2 size={18} /> Eliminar mi cuenta permanentemente
-                           </button>
+                           {!showDeleteConfirm ? (
+                               <button type="button" onClick={() => setShowDeleteConfirm(true)} disabled={profileStatus.state === 'loading'} style={{ color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold' }}>
+                                  <Trash2 size={18} /> Eliminar mi cuenta permanentemente
+                               </button>
+                           ) : (
+                               <form onSubmit={handleDeleteUserAccount} style={{ background: '#fff1f2', padding: '1.5rem', borderRadius: '12px', border: '1px solid #fecdd3', textAlign: 'left' }}>
+                                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#be123c', marginBottom: '1rem', fontSize: '1rem' }}>
+                                     <ShieldAlert size={18}/> Zona de Peligro: Eliminar Cuenta
+                                  </h4>
+                                  <p style={{ color: '#9f1239', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                                     Esta acción es irreversible. Para confirmar, ingresa tu contraseña.
+                                  </p>
+                                  <div className="form-group-gold">
+                                     <input type="password" placeholder="Tu contraseña" value={deletePassword} onChange={e => setDeletePassword(e.target.value)} required style={{ background: 'white', borderColor: '#fca5a5' }} />
+                                  </div>
+                                  <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                     <button type="button" onClick={() => { setShowDeleteConfirm(false); setDeletePassword(''); setProfileStatus({ state: 'idle', msg: ''}); }} style={{ flex: 1, padding: '0.8rem', borderRadius: '12px', border: '1px solid #fca5a5', background: 'transparent', cursor: 'pointer', color: '#9f1239' }}>
+                                        Cancelar
+                                     </button>
+                                     <button type="submit" disabled={profileStatus.state === 'loading'} style={{ flex: 1, padding: '0.8rem', borderRadius: '12px', border: 'none', background: '#e11d48', cursor: 'pointer', color: 'white', fontWeight: 'bold' }}>
+                                        {profileStatus.state === 'loading' ? 'Procesando...' : 'Confirmar Eliminación'}
+                                     </button>
+                                  </div>
+                               </form>
+                           )}
                         </div>
                      </div>
                   )}
