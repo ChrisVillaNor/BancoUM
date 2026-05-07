@@ -39,20 +39,16 @@ router.post('/transferir', async (req, res) => {
 
     if(cuenta_origen_id == realDestinoId) throw new Error("Las cuentas de origen y destino no pueden ser iguales");
 
-    // 1. Descontar dinero del Origen
-    const resOrigen = await client.query('UPDATE cuenta SET saldo = saldo - $1 WHERE id = $2 AND saldo >= $1 RETURNING saldo', [valor, cuenta_origen_id]);
-    if(resOrigen.rowCount === 0) throw new Error(`La cuenta origen no existe o no tiene saldo suficiente para transferir $${valor}.`);
-    
-    // 2. Sumar dinero al Destino
-    const resDestino = await client.query('UPDATE cuenta SET saldo = saldo + $1 WHERE id = $2 RETURNING saldo', [valor, realDestinoId]);
-    if(resDestino.rowCount === 0) throw new Error(`Error al acreditar a la cuenta destino.`);
+    // La base de datos tiene un TRIGGER (trigger_actualizar_saldo) que
+    // se encarga de descontar y sumar saldos automáticamente al insertar.
+    // Solo debemos insertar el registro y el trigger hará el resto.
+    // tipo_movimiento_id 3 = TRANSFERENCIA
 
-    // 3. Registrar este movimiento explícitamente como evidencia
     const queryMov = `
       INSERT INTO movimiento (tipo_movimiento_id, cuenta_origen_id, cuenta_destino_id, punto_id, valor, fecha) 
       VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING *;
     `;
-    const resMov = await client.query(queryMov, [tipo_movimiento_id || 1, cuenta_origen_id, realDestinoId, punto_id || 1, valor]);
+    const resMov = await client.query(queryMov, [3, cuenta_origen_id, realDestinoId, punto_id || 1, valor]);
     
     await client.query('COMMIT'); 
     res.status(201).json(resMov.rows[0]);
@@ -81,19 +77,20 @@ router.post('/admin-deposit', async (req, res) => {
   try {
     await client.query('BEGIN');
     
-    // Sumar dinero al Destino
-    const resDestino = await client.query('UPDATE cuenta SET saldo = saldo + $1 WHERE id = $2 RETURNING saldo', [valor, cuenta_destino_id]);
-    if(resDestino.rowCount === 0) throw new Error(`La cuenta destino [${cuenta_destino_id}] no existe.`);
-
-    // Registrar este movimiento explícitamente como evidencia
+    // La base de datos tiene un TRIGGER (trigger_actualizar_saldo) que
+    // suma el dinero al destino cuando se inserta un depósito (tipo_movimiento_id = 1).
+    
     const queryMov = `
       INSERT INTO movimiento (tipo_movimiento_id, cuenta_origen_id, cuenta_destino_id, punto_id, valor, fecha) 
       VALUES ($1, NULL, $2, $3, $4, NOW()) RETURNING *;
     `;
-    const resMov = await client.query(queryMov, [tipo_movimiento_id || 1, cuenta_destino_id, punto_id || 1, valor]);
+    const resMov = await client.query(queryMov, [1, cuenta_destino_id, punto_id || 1, valor]);
     
+    // Recuperar el saldo actualizado para mandarlo al front
+    const saldoRes = await client.query('SELECT saldo FROM cuenta WHERE id = $1', [cuenta_destino_id]);
+
     await client.query('COMMIT'); 
-    res.status(201).json({ movimiento: resMov.rows[0], nuevo_saldo: resDestino.rows[0].saldo });
+    res.status(201).json({ movimiento: resMov.rows[0], nuevo_saldo: saldoRes.rows[0].saldo });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Rollback activado por error:', err);

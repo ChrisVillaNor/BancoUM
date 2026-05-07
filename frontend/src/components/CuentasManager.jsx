@@ -36,8 +36,8 @@ export default function CuentasManager() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Generar automáticamente un número de cuenta aleatorio estilo banco
-      const cuentaAutogenerada = Math.floor(Math.random() * 900000000) + 100000000;
+      // Generar automáticamente un número de cuenta aleatorio estilo banco de 12 dígitos
+      const cuentaAutogenerada = Math.floor(100000000000 + Math.random() * 900000000000);
       const payload = { ...formData, numero_cuenta: cuentaAutogenerada.toString() };
 
       const res = await fetch(API_URL, {

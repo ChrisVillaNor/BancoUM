@@ -71,7 +71,7 @@ export default function ClientDashboard({ userData, onLogout }) {
   const handleCreateAccount = async () => {
     setCreating(true);
     try {
-      const randomAccountNum = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+      const randomAccountNum = Math.floor(100000000000 + Math.random() * 900000000000).toString();
       const resp = await fetch('/api/cuentas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
