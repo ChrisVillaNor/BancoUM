@@ -17,7 +17,7 @@ const otpStore = new Map();
 // Obtener todos los clientes (lista)
 router.get('/', async (req, res) => {
   try {
-    const query = 'SELECT * FROM cliente ORDER BY id DESC LIMIT 50';
+    const query = 'SELECT * FROM cliente ORDER BY id DESC';
     const result = await pool.query(query);
     res.json(result.rows);
   } catch (err) {
