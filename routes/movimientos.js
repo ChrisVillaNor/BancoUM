@@ -14,36 +14,46 @@ router.get('/', async (req, res) => {
 
 // Transacción SQL Crítica: Transferir Dinero
 router.post('/transferir', async (req, res) => {
-  const { cuenta_origen_id, cuenta_destino_id, valor, tipo_movimiento_id, punto_id } = req.body;
+  const { cuenta_origen_id, cuenta_destino_id, numero_cuenta_destino, valor, tipo_movimiento_id, punto_id } = req.body;
   
-  if (!cuenta_origen_id || !cuenta_destino_id || !valor) {
+  const destIdOrNum = numero_cuenta_destino || cuenta_destino_id;
+  
+  if (!cuenta_origen_id || !destIdOrNum || !valor) {
     return res.status(400).json({ error: "Faltan datos obligatorios (Origen, Destino, Valor)" });
   }
 
-  if(cuenta_origen_id === cuenta_destino_id) return res.status(400).json({error: "Las cuentas de origen y destino no pueden ser iguales"});
   if(valor <= 0) return res.status(400).json({error: "El valor a transferir debe ser mayor a cero, no estafemos al banco."});
 
   const client = await pool.connect();
   try {
-    // === INICIAMOS TRANSACCIÓN (SQL BEGIN) ===
     await client.query('BEGIN');
     
+    let realDestinoId = destIdOrNum;
+    
+    // Si es un número de cuenta (cadena larga) buscamos su ID interno
+    if (numero_cuenta_destino || String(cuenta_destino_id).length > 6) {
+       const destCheck = await client.query('SELECT id FROM cuenta WHERE numero_cuenta = $1', [String(destIdOrNum)]);
+       if (destCheck.rows.length === 0) throw new Error(`La cuenta destino número [${destIdOrNum}] no existe en el sistema.`);
+       realDestinoId = destCheck.rows[0].id;
+    }
+
+    if(cuenta_origen_id == realDestinoId) throw new Error("Las cuentas de origen y destino no pueden ser iguales");
+
     // 1. Descontar dinero del Origen
-    const resOrigen = await client.query('UPDATE cuenta SET saldo = saldo - $1 WHERE id = $2 RETURNING saldo', [valor, cuenta_origen_id]);
-    if(resOrigen.rowCount === 0) throw new Error(`La cuenta origen [${cuenta_origen_id}] no existe.`);
+    const resOrigen = await client.query('UPDATE cuenta SET saldo = saldo - $1 WHERE id = $2 AND saldo >= $1 RETURNING saldo', [valor, cuenta_origen_id]);
+    if(resOrigen.rowCount === 0) throw new Error(`La cuenta origen no existe o no tiene saldo suficiente para transferir $${valor}.`);
     
     // 2. Sumar dinero al Destino
-    const resDestino = await client.query('UPDATE cuenta SET saldo = saldo + $1 WHERE id = $2 RETURNING saldo', [valor, cuenta_destino_id]);
-    if(resDestino.rowCount === 0) throw new Error(`La cuenta destino [${cuenta_destino_id}] no existe.`);
+    const resDestino = await client.query('UPDATE cuenta SET saldo = saldo + $1 WHERE id = $2 RETURNING saldo', [valor, realDestinoId]);
+    if(resDestino.rowCount === 0) throw new Error(`Error al acreditar a la cuenta destino.`);
 
     // 3. Registrar este movimiento explícitamente como evidencia
     const queryMov = `
       INSERT INTO movimiento (tipo_movimiento_id, cuenta_origen_id, cuenta_destino_id, punto_id, valor, fecha) 
       VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING *;
     `;
-    const resMov = await client.query(queryMov, [tipo_movimiento_id || 1, cuenta_origen_id, cuenta_destino_id, punto_id || 1, valor]);
+    const resMov = await client.query(queryMov, [tipo_movimiento_id || 1, cuenta_origen_id, realDestinoId, punto_id || 1, valor]);
     
-    // === FINALIZAR TRANSACCIÓN CON ÉXITO (SQL COMMIT) ===
     await client.query('COMMIT'); 
     res.status(201).json(resMov.rows[0]);
 

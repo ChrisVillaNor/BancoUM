@@ -122,7 +122,7 @@ export default function ClientDashboard({ userData, onLogout }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cuenta_origen_id: origenId,
-          cuenta_destino_id: destinoId,
+          numero_cuenta_destino: destinoId,
           valor: parseFloat(monto),
           tipo_movimiento_id: 1 
         })
