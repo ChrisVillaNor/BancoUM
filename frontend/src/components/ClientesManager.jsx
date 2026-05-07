@@ -1,11 +1,12 @@
 // frontend/src/components/ClientesManager.jsx
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Save, X, RefreshCw } from 'lucide-react';
+import { UserPlus, Save, X, RefreshCw, Search } from 'lucide-react';
 
 const API_URL = '/api/clientes';
 
 export default function ClientesManager() {
   const [clientes, setClientes] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [errorText, setErrorText] = useState('');
@@ -80,6 +81,14 @@ export default function ClientesManager() {
       alert(err.message);
     }
   };
+
+  const filteredClientes = clientes.filter(cli => {
+    const term = searchTerm.toLowerCase();
+    const nombreCompleto = `${cli.nombre} ${cli.apellido}`.toLowerCase();
+    const doc = (cli.numero_documento || '').toLowerCase();
+    const contact = `${cli.telefono || ''} ${cli.email || ''}`.toLowerCase();
+    return nombreCompleto.includes(term) || doc.includes(term) || contact.includes(term);
+  });
 
   return (
     <div>
@@ -156,11 +165,23 @@ export default function ClientesManager() {
       )}
 
       <div className="glass-panel" style={{ padding: '0' }}>
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <h3 style={{ margin: 0 }}>Listado de Clientes</h3>
-          <button className="btn btn-secondary" onClick={fetchClientes} disabled={loading} style={{ padding: '0.4rem' }}>
-            <RefreshCw size={18} />
-          </button>
+          <div style={{ display: 'flex', gap: '1rem', flex: 1, justifyContent: 'flex-end', alignItems: 'center' }}>
+            <div className="input-with-icon" style={{ maxWidth: '350px', flex: 1 }}>
+              <Search size={18} className="input-icon" />
+              <input 
+                type="text" 
+                placeholder="Buscar por nombre, doc o contacto..." 
+                value={searchTerm} 
+                onChange={(e) => setSearchTerm(e.target.value)} 
+                style={{ width: '100%' }}
+              />
+            </div>
+            <button className="btn btn-secondary" onClick={fetchClientes} disabled={loading} style={{ padding: '0.4rem', height: '100%' }}>
+              <RefreshCw size={18} />
+            </button>
+          </div>
         </div>
         
         <div style={{ overflowX: 'auto' }}>
@@ -175,8 +196,8 @@ export default function ClientesManager() {
             </thead>
             <tbody>
               {loading && <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem' }}>Cargando clientes...</td></tr>}
-              {!loading && clientes.length === 0 && <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem' }}>No hay clientes registrados.</td></tr>}
-              {clientes.map(cli => (
+              {!loading && filteredClientes.length === 0 && <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem' }}>No se encontraron clientes.</td></tr>}
+              {filteredClientes.map(cli => (
                 <tr key={cli.id}>
                   <td><strong>{cli.tipo_documento}</strong> {cli.numero_documento}</td>
                   <td>{cli.nombre} {cli.apellido}</td>
