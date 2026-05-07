@@ -144,12 +144,24 @@ export default function CuentasManager() {
           <button className="btn btn-secondary" onClick={fetchCuentas} disabled={loading} style={{ padding: '0.4rem' }}><RefreshCw size={18} /></button>
         </div>
         <table className="data-table">
-          <thead><tr><th>ID</th><th>Cédula Dueño (ID)</th><th>Número Cuenta</th><th style={{ textAlign: 'right' }}>Saldo Total</th><th style={{ textAlign: 'center' }}>Acciones</th></tr></thead>
+          <thead><tr><th>ID</th><th>Cédula Dueño</th><th>Número Cuenta</th><th style={{ textAlign: 'right' }}>Saldo Total</th><th style={{ textAlign: 'center' }}>Acciones</th></tr></thead>
           <tbody>
             {cuentas.map(c => (
               <tr key={c.id}>
                 <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>En sistema: {c.id}</td>
-                <td>Dueño ID: <strong>{c.usuario_id}</strong></td>
+                <td>
+                  {(() => {
+                    const cli = clientesList.find(cli => cli.id === c.usuario_id);
+                    return cli ? (
+                      <div>
+                        <strong>{cli.numero_documento}</strong>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{cli.nombre} {cli.apellido}</div>
+                      </div>
+                    ) : (
+                      <strong>ID: {c.usuario_id}</strong>
+                    );
+                  })()}
+                </td>
                 <td><strong>{c.numero_cuenta}</strong></td>
                 <td style={{ textAlign: 'right', color: 'var(--success)', fontWeight: 'bold' }}>$ {parseFloat(c.saldo).toLocaleString('es-CO')}</td>
                 <td style={{ textAlign: 'center' }}>
