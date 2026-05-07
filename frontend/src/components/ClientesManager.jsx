@@ -8,6 +8,8 @@ export default function ClientesManager() {
   const [clientes, setClientes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
   const [showForm, setShowForm] = useState(false);
   const [errorText, setErrorText] = useState('');
   const [formData, setFormData] = useState({
@@ -89,6 +91,9 @@ export default function ClientesManager() {
     const contact = `${cli.telefono || ''} ${cli.email || ''}`.toLowerCase();
     return nombreCompleto.includes(term) || doc.includes(term) || contact.includes(term);
   });
+
+  const totalPages = Math.ceil(filteredClientes.length / itemsPerPage);
+  const currentClientes = filteredClientes.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div>
@@ -174,7 +179,7 @@ export default function ClientesManager() {
                 type="text" 
                 placeholder="Buscar por nombre, doc o contacto..." 
                 value={searchTerm} 
-                onChange={(e) => setSearchTerm(e.target.value)} 
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} 
                 style={{ width: '100%' }}
               />
             </div>
@@ -197,7 +202,7 @@ export default function ClientesManager() {
             <tbody>
               {loading && <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem' }}>Cargando clientes...</td></tr>}
               {!loading && filteredClientes.length === 0 && <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem' }}>No se encontraron clientes.</td></tr>}
-              {filteredClientes.map(cli => (
+              {currentClientes.map(cli => (
                 <tr key={cli.id}>
                   <td><strong>{cli.tipo_documento}</strong> {cli.numero_documento}</td>
                   <td>{cli.nombre} {cli.apellido}</td>
@@ -224,6 +229,30 @@ export default function ClientesManager() {
             </tbody>
           </table>
         </div>
+        
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem', gap: '1rem', borderTop: '1px solid var(--border)' }}>
+            <button 
+              className="btn btn-secondary" 
+              disabled={currentPage === 1} 
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              style={{ padding: '0.4rem 1rem' }}
+            >
+              Anterior
+            </button>
+            <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+              Página {currentPage} de {totalPages}
+            </span>
+            <button 
+              className="btn btn-secondary" 
+              disabled={currentPage === totalPages} 
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              style={{ padding: '0.4rem 1rem' }}
+            >
+              Siguiente
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
