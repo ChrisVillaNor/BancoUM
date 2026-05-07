@@ -110,6 +110,77 @@ router.post('/send-otp', async (req, res) => {
   }
 });
 
+// Enviar código OTP para recuperación de contraseña
+router.post('/forgot-password-otp', async (req, res) => {
+  const { email } = req.body;
+  
+  try {
+    const checkQuery = 'SELECT nombre FROM cliente WHERE email = $1';
+    const checkResult = await pool.query(checkQuery, [email]);
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'No existe una cuenta asociada a este correo electrónico.' });
+    }
+    
+    const nombre = checkResult.rows[0].nombre;
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    otpStore.set(email + '_reset', { code, expires: Date.now() + 10 * 60 * 1000 });
+
+    const mailOptions = {
+      from: '"BancoUM Seguridad" <no-reply@bancoum.edu>',
+      to: email,
+      subject: 'Recuperación de Contraseña - BancoUM',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+          <h2 style="color: #d4af37; text-align: center;">Recuperación de Contraseña, ${nombre}</h2>
+          <p>Has solicitado restablecer tu contraseña en BancoUM. Ingresa el siguiente código de 6 dígitos en la aplicación:</p>
+          <div style="text-align: center; margin: 30px 0;">
+              <span style="padding: 15px 30px; background-color: #f8f9fa; border: 2px dashed #d4af37; color: #333; font-size: 24px; font-weight: bold; letter-spacing: 5px;">${code}</span>
+          </div>
+          <p style="color: #555; font-size: 12px; text-align: center;">El código expirará en 10 minutos.</p>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ message: 'Código de recuperación enviado.' });
+  } catch (err) {
+    console.error("Error en forgot-password-otp:", err.message);
+    res.status(500).json({ error: 'Error interno al procesar la solicitud.' });
+  }
+});
+
+// Restablecer contraseña con OTP
+router.post('/reset-password', async (req, res) => {
+  const { email, otp, nueva_contrasena } = req.body;
+  
+  const storedOtp = otpStore.get(email + '_reset');
+  if (!storedOtp) {
+    return res.status(400).json({ error: 'Debes solicitar un código de recuperación primero.' });
+  }
+  if (Date.now() > storedOtp.expires) {
+    otpStore.delete(email + '_reset');
+    return res.status(400).json({ error: 'El código ha expirado. Solicita uno nuevo.' });
+  }
+  if (storedOtp.code !== otp) {
+    return res.status(400).json({ error: 'El código de verificación es incorrecto.' });
+  }
+
+  try {
+    const updateQuery = 'UPDATE cliente SET contrasena = $1 WHERE email = $2 RETURNING id';
+    const result = await pool.query(updateQuery, [nueva_contrasena, email]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado al intentar actualizar.' });
+    }
+    
+    otpStore.delete(email + '_reset'); // Limpiar OTP usado
+    res.status(200).json({ message: 'Contraseña actualizada correctamente en la base de datos.' });
+  } catch (err) {
+    console.error('Error al restablecer contraseña:', err);
+    res.status(500).json({ error: 'Error del servidor al intentar actualizar la base de datos.' });
+  }
+});
+
 // Crear un nuevo cliente directamente (Modo Administrador, sin OTP)
 router.post('/admin', async (req, res) => {
   const {
@@ -208,6 +279,25 @@ router.post('/login', async (req, res) => {
   } catch (err) {
     console.error('Error en Login de cliente:', err);
     res.status(500).json({ error: 'Error interno del servidor intentando iniciar sesión.' });
+  }
+});
+
+// Alternar el estado activo/inactivo de un cliente (Modo Administrador)
+router.patch('/:id/toggle-status', async (req, res) => {
+  const id = req.params.id;
+  try {
+    const query = `
+      UPDATE cliente 
+      SET activo = NOT activo 
+      WHERE id = $1 
+      RETURNING id, activo;
+    `;
+    const result = await pool.query(query, [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Cliente no encontrado' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error al cambiar estado del cliente:', err);
+    res.status(500).json({ error: 'Error del servidor al cambiar el estado del cliente' });
   }
 });
 

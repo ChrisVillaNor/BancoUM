@@ -68,6 +68,19 @@ export default function ClientesManager() {
     }
   };
 
+  const toggleStatus = async (id) => {
+    try {
+      const res = await fetch(`${API_URL}/${id}/toggle-status`, {
+        method: 'PATCH',
+      });
+      if (!res.ok) throw new Error('Error al cambiar el estado');
+      const data = await res.json();
+      setClientes(clientes.map(c => c.id === id ? { ...c, activo: data.activo } : c));
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   return (
     <div>
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -172,9 +185,18 @@ export default function ClientesManager() {
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{cli.email || 'Sin email'}</div>
                   </td>
                   <td>
-                    <span className="status-badge" style={{ background: cli.activo ? '#e8f5e9' : '#ffebee', color: cli.activo ? 'var(--success)' : '#d32f2f' }}>
-                      {cli.activo ? 'Activo' : 'Inactivo'}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span className="status-badge" style={{ background: cli.activo ? '#e8f5e9' : '#ffebee', color: cli.activo ? 'var(--success)' : '#d32f2f' }}>
+                        {cli.activo ? 'Activo' : 'Bloqueado'}
+                      </span>
+                      <button 
+                        className={`btn ${cli.activo ? 'btn-secondary' : 'btn-primary'}`} 
+                        onClick={() => toggleStatus(cli.id)}
+                        style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', minHeight: 'auto', borderRadius: '4px' }}
+                      >
+                        {cli.activo ? 'Bloquear' : 'Activar'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
