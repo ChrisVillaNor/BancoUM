@@ -57,4 +57,40 @@ router.post('/transferir', async (req, res) => {
   }
 });
 
+// Transacción SQL: Consignación Administrativa
+router.post('/admin-deposit', async (req, res) => {
+  const { cuenta_destino_id, valor, tipo_movimiento_id, punto_id } = req.body;
+  
+  if (!cuenta_destino_id || !valor) {
+    return res.status(400).json({ error: "Faltan datos obligatorios (Destino, Valor)" });
+  }
+
+  if(valor <= 0) return res.status(400).json({error: "El valor a consignar debe ser mayor a cero."});
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    // Sumar dinero al Destino
+    const resDestino = await client.query('UPDATE cuenta SET saldo = saldo + $1 WHERE id = $2 RETURNING saldo', [valor, cuenta_destino_id]);
+    if(resDestino.rowCount === 0) throw new Error(`La cuenta destino [${cuenta_destino_id}] no existe.`);
+
+    // Registrar este movimiento explícitamente como evidencia
+    const queryMov = `
+      INSERT INTO movimiento (tipo_movimiento_id, cuenta_origen_id, cuenta_destino_id, punto_id, valor, fecha) 
+      VALUES ($1, NULL, $2, $3, $4, NOW()) RETURNING *;
+    `;
+    const resMov = await client.query(queryMov, [tipo_movimiento_id || 1, cuenta_destino_id, punto_id || 1, valor]);
+    
+    await client.query('COMMIT'); 
+    res.status(201).json({ movimiento: resMov.rows[0], nuevo_saldo: resDestino.rows[0].saldo });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Rollback activado por error:', err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
 module.exports = router;

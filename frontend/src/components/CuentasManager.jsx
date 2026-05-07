@@ -10,6 +10,7 @@ export default function CuentasManager() {
   const [errorText, setErrorText] = useState('');
   const [formData, setFormData] = useState({ numero_cuenta: '', saldo: '0', cupo_total: '0', usuario_id: '' });
   const [clientesList, setClientesList] = useState([]);
+  const [transferData, setTransferData] = useState({ accountId: null, amount: '' });
 
   const fetchCuentas = async () => {
     setLoading(true);
@@ -51,6 +52,31 @@ export default function CuentasManager() {
       setFormData({ numero_cuenta: '', saldo: '0', cupo_total: '0', usuario_id: '' });
     } catch (err) {
       setErrorText(err.message);
+    }
+  };
+
+  const handleTransfer = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/movimientos/admin-deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+           cuenta_destino_id: transferData.accountId, 
+           valor: parseFloat(transferData.amount) 
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      // Actualizar el saldo localmente
+      setCuentas(cuentas.map(c => 
+        c.id === transferData.accountId ? { ...c, saldo: data.nuevo_saldo } : c
+      ));
+      setTransferData({ accountId: null, amount: '' });
+      alert('Transferencia realizada con éxito');
+    } catch (err) {
+      alert(err.message);
     }
   };
 
@@ -96,13 +122,29 @@ export default function CuentasManager() {
         </div>
       )}
 
+      {transferData.accountId && (
+        <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid var(--brand-gold)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+            <h3>Transferir a Cuenta #{cuentas.find(c => c.id === transferData.accountId)?.numero_cuenta}</h3>
+            <button className="btn btn-secondary" onClick={() => setTransferData({ accountId: null, amount: '' })} style={{ padding: '0.4rem' }}><X size={18} /></button>
+          </div>
+          <form onSubmit={handleTransfer} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
+            <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+              <label>Monto a transferir ($)</label>
+              <input type="number" required min="1" value={transferData.amount} onChange={e => setTransferData({ ...transferData, amount: e.target.value })} />
+            </div>
+            <button type="submit" className="btn btn-primary" style={{ padding: '0.8rem 1.5rem' }}>Confirmar Transferencia</button>
+          </form>
+        </div>
+      )}
+
       <div className="glass-panel" style={{ padding: '0' }}>
         <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between' }}>
           <h3 style={{ margin: 0 }}>Cuentas Activas</h3>
           <button className="btn btn-secondary" onClick={fetchCuentas} disabled={loading} style={{ padding: '0.4rem' }}><RefreshCw size={18} /></button>
         </div>
         <table className="data-table">
-          <thead><tr><th>ID</th><th>Cédula Dueño (ID)</th><th>Número Cuenta</th><th style={{ textAlign: 'right' }}>Saldo Total</th></tr></thead>
+          <thead><tr><th>ID</th><th>Cédula Dueño (ID)</th><th>Número Cuenta</th><th style={{ textAlign: 'right' }}>Saldo Total</th><th style={{ textAlign: 'center' }}>Acciones</th></tr></thead>
           <tbody>
             {cuentas.map(c => (
               <tr key={c.id}>
@@ -110,9 +152,12 @@ export default function CuentasManager() {
                 <td>Dueño ID: <strong>{c.usuario_id}</strong></td>
                 <td><strong>{c.numero_cuenta}</strong></td>
                 <td style={{ textAlign: 'right', color: 'var(--success)', fontWeight: 'bold' }}>$ {parseFloat(c.saldo).toLocaleString('es-CO')}</td>
+                <td style={{ textAlign: 'center' }}>
+                  <button className="btn btn-secondary" onClick={() => setTransferData({ accountId: c.id, amount: '' })} style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', borderRadius: '4px' }}>Transferir</button>
+                </td>
               </tr>
             ))}
-            {cuentas.length === 0 && !loading && <tr><td colSpan="3" style={{textAlign:'center', padding:'2rem'}}>No hay cuentas disponibles</td></tr>}
+            {cuentas.length === 0 && !loading && <tr><td colSpan="5" style={{textAlign:'center', padding:'2rem'}}>No hay cuentas disponibles</td></tr>}
           </tbody>
         </table>
       </div>
